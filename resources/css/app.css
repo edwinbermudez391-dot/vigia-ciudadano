@@ -1,0 +1,28 @@
+@import 'tailwindcss';
+
+/* Modo oscuro desactivado (fondo global esmeralda profundo): el variant dark:
+   queda atado a una clase inexistente (.no-dark), de modo que cualquier
+   dark: residual (p. ej. en la paginación de vendor) resulta inerte. */
+@custom-variant dark (&:where(.no-dark, .no-dark *));
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+@layer base {
+    /* El texto global del body es claro (fondo esmeralda profundo); los campos
+       se pintan siempre sobre blanco, así que su tinta se fija aquí en grafito.
+       Las utilidades text-* por clase (p. ej. el text-white del login) ganan
+       por cascada de layers. */
+    input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+    textarea,
+    select {
+        color: var(--color-slate-800);
+    }
+}
