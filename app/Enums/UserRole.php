@@ -7,11 +7,13 @@ namespace App\Enums;
 /**
  * Roles de usuario del sistema "Vigía Ciudadano".
  *
- * El sistema de autenticación es exclusivo para personal operativo e institucional.
- * Los ciudadanos reportan incidencias de forma pública y anónima sin necesidad de cuenta.
+ * Los ciudadanos pueden reportar incidencias de forma pública y anónima (sin cuenta),
+ * pero también pueden registrarse con rol `citizen` para vincular reportes a su cuenta,
+ * suscribirse a novedades y consultar su trazabilidad desde el panel personal.
  */
 enum UserRole: string
 {
+    case Citizen = 'citizen';
     case SuperAdmin = 'superadmin';
     case Contractor = 'contractor';
     case QualityInspector = 'quality_inspector';

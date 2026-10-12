@@ -158,4 +158,277 @@ final class AdminController extends Controller
             ->orderBy('name')
             ->get();
     }
+
+    /**
+     * Panel de analítica y métricas ejecutivas para la Alcaldía.
+     */
+    public function analytics(\Illuminate\Http\Request $request): View
+    {
+        // Filtros
+        $period = $request->get('period', 'month'); // week, month, year
+        $departmentId = $request->get('department_id');
+
+        // Calcular rango de fechas según período
+        $dateRange = $this->getDateRange($period);
+
+        // Construir query base con filtros
+        $reportsQuery = Report::query();
+        if ($departmentId) {
+            $reportsQuery->whereHas('category', fn($q) => $q->where('department_id', $departmentId));
+        }
+
+        // KPIs Principales
+        $kpis = $this->calculateKPIs($reportsQuery, $dateRange);
+
+        // Datos para gráficos
+        $charts = $this->getChartData($reportsQuery, $dateRange);
+
+        // Rendimiento de contratistas
+        $contractorPerformance = $this->getContractorPerformance($dateRange, $departmentId);
+
+        // Departamentos para filtro
+        $departments = Department::query()->where('is_active', true)->orderBy('name')->get();
+
+        return view('admin.analytics', compact(
+            'kpis',
+            'charts',
+            'contractorPerformance',
+            'departments',
+            'period',
+            'departmentId'
+        ));
+    }
+
+    /**
+     * Calcula rango de fechas según período seleccionado
+     */
+    private function getDateRange(string $period): array
+    {
+        $now = now();
+
+        return match($period) {
+            'week' => [
+                'start' => $now->copy()->startOfWeek(),
+                'end' => $now->copy()->endOfWeek(),
+                'prev_start' => $now->copy()->subWeek()->startOfWeek(),
+                'prev_end' => $now->copy()->subWeek()->endOfWeek(),
+            ],
+            'year' => [
+                'start' => $now->copy()->startOfYear(),
+                'end' => $now->copy()->endOfYear(),
+                'prev_start' => $now->copy()->subYear()->startOfYear(),
+                'prev_end' => $now->copy()->subYear()->endOfYear(),
+            ],
+            default => [ // month
+                'start' => $now->copy()->startOfMonth(),
+                'end' => $now->copy()->endOfMonth(),
+                'prev_start' => $now->copy()->subMonth()->startOfMonth(),
+                'prev_end' => $now->copy()->subMonth()->endOfMonth(),
+            ]
+        };
+    }
+
+    /**
+     * Calcula KPIs principales
+     */
+    private function calculateKPIs($baseQuery, array $dateRange): array
+    {
+        // Total reportes mes actual vs anterior
+        $currentTotal = (clone $baseQuery)
+            ->whereBetween('created_at', [$dateRange['start'], $dateRange['end']])
+            ->count();
+
+        $previousTotal = (clone $baseQuery)
+            ->whereBetween('created_at', [$dateRange['prev_start'], $dateRange['prev_end']])
+            ->count();
+
+        $variation = $previousTotal > 0
+            ? round((($currentTotal - $previousTotal) / $previousTotal) * 100, 1)
+            : 0;
+
+        // Tiempo promedio de resolución (horas desde reported hasta closed)
+        $avgResolutionHours = (clone $baseQuery)
+            ->where('status', ReportStatus::Closed->value)
+            ->whereBetween('updated_at', [$dateRange['start'], $dateRange['end']])
+            ->get()
+            ->avg(function($report) {
+                return $report->created_at->diffInHours($report->updated_at);
+            });
+
+        // Tasa de aprobación en primer intento
+        $totalInspections = QualityInspection::query()
+            ->whereHas('workOrder.report', function($q) use ($baseQuery, $dateRange) {
+                $q->mergeConstraintsFrom($baseQuery->getQuery());
+            })
+            ->whereBetween('inspected_at', [$dateRange['start'], $dateRange['end']])
+            ->count();
+
+        $approvedFirstTime = QualityInspection::query()
+            ->where('decision', InspectionDecision::Approved->value)
+            ->whereHas('workOrder.report', function($q) use ($baseQuery, $dateRange) {
+                $q->mergeConstraintsFrom($baseQuery->getQuery());
+            })
+            ->whereBetween('inspected_at', [$dateRange['start'], $dateRange['end']])
+            ->count();
+
+        $approvalRate = $totalInspections > 0
+            ? round(($approvedFirstTime / $totalInspections) * 100, 1)
+            : 0;
+
+        // Cumplimiento de SLA
+        $slaCompliance = $this->calculateSLACompliance($baseQuery, $dateRange);
+
+        return [
+            'total_reports' => $currentTotal,
+            'previous_reports' => $previousTotal,
+            'variation' => $variation,
+            'avg_resolution_hours' => $avgResolutionHours ? round($avgResolutionHours, 1) : 0,
+            'approval_rate' => $approvalRate,
+            'sla_compliance' => $slaCompliance,
+        ];
+    }
+
+    /**
+     * Calcula porcentaje de cumplimiento de SLA
+     */
+    private function calculateSLACompliance($baseQuery, array $dateRange): float
+    {
+        $closedReports = (clone $baseQuery)
+            ->where('status', ReportStatus::Closed->value)
+            ->whereBetween('updated_at', [$dateRange['start'], $dateRange['end']])
+            ->with('category')
+            ->get();
+
+        if ($closedReports->isEmpty()) {
+            return 0;
+        }
+
+        $withinSLA = $closedReports->filter(function($report) {
+            $slaHours = $report->category->sla_hours ?? 0;
+            if ($slaHours === 0) return false;
+
+            $resolutionHours = $report->created_at->diffInHours($report->updated_at);
+            return $resolutionHours <= $slaHours;
+        })->count();
+
+        return round(($withinSLA / $closedReports->count()) * 100, 1);
+    }
+
+    /**
+     * Obtiene datos para gráficos
+     */
+    private function getChartData($baseQuery, array $dateRange): array
+    {
+        // Distribución por categoría
+        $byCategory = (clone $baseQuery)
+            ->whereBetween('created_at', [$dateRange['start'], $dateRange['end']])
+            ->join('categories', 'reports.category_id', '=', 'categories.id')
+            ->select('categories.name', \DB::raw('count(*) as total'))
+            ->groupBy('categories.id', 'categories.name')
+            ->orderByDesc('total')
+            ->limit(10)
+            ->get();
+
+        // Distribución por departamento
+        $byDepartment = (clone $baseQuery)
+            ->whereBetween('created_at', [$dateRange['start'], $dateRange['end']])
+            ->join('categories', 'reports.category_id', '=', 'categories.id')
+            ->join('departments', 'categories.department_id', '=', 'departments.id')
+            ->select('departments.name', \DB::raw('count(*) as total'))
+            ->groupBy('departments.id', 'departments.name')
+            ->orderByDesc('total')
+            ->get();
+
+        // Evolución semanal (últimas 8 semanas)
+        $weeklyTrend = [];
+        $received = [];
+        $resolved = [];
+        $labels = [];
+
+        for ($i = 7; $i >= 0; $i--) {
+            $weekStart = now()->subWeeks($i)->startOfWeek();
+            $weekEnd = now()->subWeeks($i)->endOfWeek();
+
+            $labels[] = 'Sem ' . $weekStart->format('d/m');
+
+            $received[] = (clone $baseQuery)
+                ->whereBetween('created_at', [$weekStart, $weekEnd])
+                ->count();
+
+            $resolved[] = (clone $baseQuery)
+                ->where('status', ReportStatus::Closed->value)
+                ->whereBetween('updated_at', [$weekStart, $weekEnd])
+                ->count();
+        }
+
+        return [
+            'by_category' => [
+                'labels' => $byCategory->pluck('name')->toArray(),
+                'data' => $byCategory->pluck('total')->toArray(),
+            ],
+            'by_department' => [
+                'labels' => $byDepartment->pluck('name')->toArray(),
+                'data' => $byDepartment->pluck('total')->toArray(),
+            ],
+            'weekly_trend' => [
+                'labels' => $labels,
+                'received' => $received,
+                'resolved' => $resolved,
+            ],
+        ];
+    }
+
+    /**
+     * Obtiene rendimiento por contratista
+     */
+    private function getContractorPerformance(array $dateRange, ?int $departmentId): \Illuminate\Support\Collection
+    {
+        $contractors = User::query()
+            ->where('role', UserRole::Contractor->value)
+            ->where('is_active', true);
+
+        if ($departmentId) {
+            $contractors->where('department_id', $departmentId);
+        }
+
+        return $contractors->get()->map(function($contractor) use ($dateRange) {
+            $workOrders = WorkOrder::query()
+                ->where('contractor_id', $contractor->id)
+                ->whereBetween('created_at', [$dateRange['start'], $dateRange['end']])
+                ->with(['report.category', 'qualityInspections'])
+                ->get();
+
+            $assigned = $workOrders->count();
+            $completed = $workOrders->where('status', WorkOrderStatus::Completed->value)->count();
+
+            // Completadas a tiempo (dentro del SLA de la categoría)
+            $onTime = $workOrders->filter(function($wo) {
+                if (!$wo->completion_date || !$wo->report) return false;
+
+                $slaHours = $wo->report->category->sla_hours ?? 0;
+                if ($slaHours === 0) return false;
+
+                $hours = $wo->report->created_at->diffInHours($wo->completion_date);
+                return $hours <= $slaHours;
+            })->count();
+
+            // Tasa de rechazo en inspección
+            $totalInspections = $workOrders->sum(fn($wo) => $wo->qualityInspections->count());
+            $rejections = $workOrders->sum(function($wo) {
+                return $wo->qualityInspections->where('decision', InspectionDecision::Rework->value)->count();
+            });
+
+            $rejectionRate = $totalInspections > 0
+                ? round(($rejections / $totalInspections) * 100, 1)
+                : 0;
+
+            return [
+                'name' => $contractor->name,
+                'assigned' => $assigned,
+                'completed' => $completed,
+                'on_time' => $onTime,
+                'rejection_rate' => $rejectionRate,
+            ];
+        });
+    }
 }

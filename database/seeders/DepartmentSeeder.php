@@ -19,22 +19,34 @@ class DepartmentSeeder extends Seeder
     {
         $departments = [
             [
-                'name' => 'Secretaría de Infraestructura y Malla Vial',
-                'code' => 'SEC_INFRA',
-                'contact_email' => 'infraestructura@vigia.gov.co',
+                'name' => 'Secretaría de Obras Públicas e Infraestructura',
+                'code' => 'OBRAS_PUB',
+                'contact_email' => 'obraspublicas@vigia.gov.co',
                 'phone' => '(601) 555-0101',
             ],
             [
-                'name' => 'Concesión de Alumbrado Público',
-                'code' => 'ALUM_PUB',
-                'contact_email' => 'alumbrado@vigia.gov.co',
+                'name' => 'Secretaría de Movilidad y Tránsito',
+                'code' => 'MOVIL',
+                'contact_email' => 'movilidad@vigia.gov.co',
                 'phone' => '(601) 555-0102',
             ],
             [
-                'name' => 'Empresa Municipal de Acueducto y Alcantarillado',
-                'code' => 'ACUE_ALC',
-                'contact_email' => 'acueducto@vigia.gov.co',
+                'name' => 'Concesión de Alumbrado Público',
+                'code' => 'ALUM',
+                'contact_email' => 'alumbrado@vigia.gov.co',
                 'phone' => '(601) 555-0103',
+            ],
+            [
+                'name' => 'Secretaría de Gestión Ambiental',
+                'code' => 'AMB',
+                'contact_email' => 'ambiental@vigia.gov.co',
+                'phone' => '(601) 555-0104',
+            ],
+            [
+                'name' => 'Empresa de Servicios Públicos',
+                'code' => 'SERV_PUB',
+                'contact_email' => 'serviciospublicos@vigia.gov.co',
+                'phone' => '(601) 555-0105',
             ],
         ];
 

@@ -53,7 +53,7 @@ class User extends Authenticatable
      * @var array<string, mixed>
      */
     protected $attributes = [
-        'role' => UserRole::Contractor->value,
+        'role' => UserRole::Citizen->value,
         'is_active' => true,
     ];
 

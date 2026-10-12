@@ -42,13 +42,10 @@
                 <a href="#transparencia" class="rounded-lg px-3 py-2 transition duration-200 hover:bg-emerald-50 hover:text-emerald-800">Transparencia</a>
                 <a href="#metricas" class="rounded-lg px-3 py-2 transition duration-200 hover:bg-emerald-50 hover:text-emerald-800">Métricas</a>
                 <a href="#participa" class="rounded-lg px-3 py-2 transition duration-200 hover:bg-emerald-50 hover:text-emerald-800">Participa</a>
+                <a href="{{ route('map') }}" class="rounded-lg px-3 py-2 transition duration-200 hover:bg-emerald-50 hover:text-emerald-800">🗺️ Mapa</a>
             </nav>
 
             <div class="flex items-center gap-2">
-                <a href="{{ route('login') }}"
-                   class="rounded-xl border border-emerald-200 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-700 shadow-sm transition duration-200 hover:bg-emerald-50 sm:px-5">
-                    Iniciar sesión
-                </a>
                 <a href="{{ route('reports.create') }}"
                    class="hidden rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition duration-200 hover:bg-emerald-700 active:scale-[0.98] sm:inline-flex">
                     Radicar Reporte
@@ -171,6 +168,48 @@
                         <p class="mt-2 text-[11px] text-slate-500">Paso 3 de 4 · <b class="font-semibold text-slate-700">auditoría técnica en curso</b></p>
                     </div>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    {{-- ============================ MAPA INTERACTIVO ============================ --}}
+    <section class="border-y border-emerald-100 bg-white py-14 lg:py-16">
+        <div class="mx-auto max-w-6xl px-4">
+            <div class="max-w-2xl">
+                <p class="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-600">Mapa en vivo</p>
+                <h2 class="font-display mt-3 text-3xl font-semibold text-slate-900 sm:text-4xl">Incidencias georreferenciadas</h2>
+                <p class="mt-4 text-slate-600">Explora en tiempo real los reportes ciudadanos activos en el municipio. Cada punto es una incidencia verificable con trazabilidad pública.</p>
+            </div>
+
+            {{-- Contenedor del mapa embebido --}}
+            <div class="relative mt-8 overflow-hidden rounded-2xl border border-emerald-100 shadow-lg shadow-emerald-900/10">
+                {{-- CSS de Leaflet inline para la landing --}}
+                <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous">
+                <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+                <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+
+                <div id="landing-map" style="height: 420px; width: 100%; z-index: 1;" role="application" aria-label="Mapa de incidencias activas"></div>
+
+                {{-- Stats flotante --}}
+                <div class="absolute top-3 left-14 z-[1000] rounded-xl bg-white px-4 py-2 text-sm font-semibold text-[#062e24] shadow-md">
+                    📍 <span id="landing-map-count" class="text-emerald-700">0</span> incidencias activas
+                </div>
+
+                {{-- Leyenda de colores --}}
+                <div class="absolute bottom-3 right-3 z-[1000] rounded-xl bg-white/95 px-4 py-3 text-xs shadow-md backdrop-blur-sm">
+                    <p class="mb-2 font-bold text-[#062e24]">Estado del reporte</p>
+                    <div class="flex items-center gap-2"><span class="inline-block size-3 rounded-full border-2 border-white shadow" style="background:#eab308"></span> Reportado</div>
+                    <div class="flex items-center gap-2"><span class="inline-block size-3 rounded-full border-2 border-white shadow" style="background:#3b82f6"></span> En progreso</div>
+                    <div class="flex items-center gap-2"><span class="inline-block size-3 rounded-full border-2 border-white shadow" style="background:#8b5cf6"></span> Bajo inspección</div>
+                    <div class="flex items-center gap-2"><span class="inline-block size-3 rounded-full border-2 border-white shadow" style="background:#ef4444"></span> Retrabajo</div>
+                </div>
+            </div>
+
+            <div class="mt-4 flex items-center justify-between">
+                <p class="text-xs text-slate-500">Datos actualizados en tiempo real · Fuentes: expediente público de la plataforma</p>
+                <a href="{{ route('map') }}" class="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700">
+                    Ver mapa completo →
+                </a>
             </div>
         </div>
     </section>
@@ -615,6 +654,118 @@
                 // tras autenticarse cae directo en la trazabilidad del ticket.
                 window.location.href = consultBase.replace('__CODE__', encodeURIComponent(code));
             });
+        })();
+    </script>
+
+    {{-- ============ Leaflet: mapa interactivo de incidencias ============ --}}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <script>
+        (function () {
+            'use strict';
+
+            var mapEl = document.getElementById('landing-map');
+            if (!mapEl || typeof L === 'undefined') return;
+
+            var statsEl = document.getElementById('landing-map-count');
+            var apiUrl = @json(url('/api/v1/reports/map-data'));
+
+            var map = L.map('landing-map', {
+                zoomControl: true,
+                scrollWheelZoom: false,
+            }).setView([3.0095, -76.4849], 14);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap',
+            }).addTo(map);
+
+            var clusterGroup = L.markerClusterGroup({
+                maxClusterRadius: 45,
+                spiderfyOnMaxZoom: true,
+                showCoverageOnHover: false,
+                zoomToBoundsOnClick: true,
+                iconCreateFunction: function (cluster) {
+                    var count = cluster.getChildCount();
+                    var dim = count >= 50 ? 56 : (count >= 10 ? 48 : 38);
+                    return L.divIcon({
+                        html: '<div style="width:' + dim + 'px;height:' + dim + 'px;border-radius:50%;background:#087b5f;color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);">' + count + '</div>',
+                        className: '',
+                        iconSize: L.point(dim, dim),
+                    });
+                }
+            });
+
+            function createIcon(color) {
+                return L.divIcon({
+                    html: '<div style="width:26px;height:26px;border-radius:50%;background:' + color + ';border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;">'
+                        + '<div style="width:8px;height:8px;border-radius:50%;background:white;opacity:0.8;"></div>'
+                        + '</div>',
+                    className: '',
+                    iconSize: L.point(26, 26),
+                    iconAnchor: L.point(13, 13),
+                    popupAnchor: L.point(0, -15),
+                });
+            }
+
+            function escHtml(s) {
+                return String(s).replace(/[&<>"']/g, function (c) {
+                    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+                });
+            }
+
+            function buildPopup(r) {
+                var photoHtml = r.photo_url
+                    ? '<img src="' + escHtml(r.photo_url) + '" alt="Evidencia" style="width:100%;height:110px;object-fit:cover;border-radius:8px 8px 0 0;" loading="lazy">'
+                    : '<div style="width:100%;height:60px;background:#f0faf5;display:flex;align-items:center;justify-content:center;border-radius:8px 8px 0 0;"><span style="font-size:24px;">📷</span></div>';
+
+                var badgeColors = {
+                    'reported': { bg: '#fef9c3', text: '#854d0e' },
+                    'in_progress': { bg: '#dbeafe', text: '#1e40af' },
+                    'under_inspection': { bg: '#ede9fe', text: '#5b21b6' },
+                    'rework': { bg: '#fee2e2', text: '#991b1b' },
+                    'closed': { bg: '#dcfce7', text: '#166534' },
+                };
+                var bc = badgeColors[r.status] || { bg: '#f1f5f9', text: '#475569' };
+
+                return '<div style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;">'
+                    + photoHtml
+                    + '<div style="padding:10px 12px;">'
+                    + '<p style="font-family:monospace;font-size:10px;color:#597268;font-weight:600;margin:0;">' + escHtml(r.ticket_code) + '</p>'
+                    + '<p style="font-size:13px;font-weight:700;color:#062e24;margin:3px 0;line-height:1.3;">' + escHtml(r.title) + '</p>'
+                    + '<p style="font-size:11px;color:#1f5142;margin:0;">📁 ' + escHtml(r.category_name) + '</p>'
+                    + '<span style="display:inline-block;padding:2px 8px;border-radius:9999px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-top:6px;background:' + bc.bg + ';color:' + bc.text + ';">' + escHtml(r.status_label) + '</span>'
+                    + '<a href="' + escHtml(r.detail_url) + '" style="display:block;text-align:center;margin-top:8px;padding:6px 12px;background:#087b5f;color:white;border-radius:8px;text-decoration:none;font-size:11px;font-weight:600;">Ver detalle →</a>'
+                    + '</div></div>';
+            }
+
+            // Cargar datos del endpoint público
+            fetch(apiUrl, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+                .then(function (res) { return res.ok ? res.json() : null; })
+                .then(function (json) {
+                    if (!json || !json.data) return;
+
+                    var reports = json.data;
+                    statsEl.textContent = reports.length;
+
+                    reports.forEach(function (r) {
+                        var marker = L.marker([r.latitude, r.longitude], { icon: createIcon(r.marker_color) });
+                        marker.bindPopup(buildPopup(r), { maxWidth: 210, minWidth: 210, closeButton: true });
+                        clusterGroup.addLayer(marker);
+                    });
+
+                    map.addLayer(clusterGroup);
+
+                    if (reports.length > 0) {
+                        var bounds = clusterGroup.getBounds();
+                        if (bounds.isValid()) {
+                            map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+                        }
+                    }
+                })
+                .catch(function () {
+                    // Sin red o endpoint no disponible: mapa vacío, no bloquea la landing
+                });
         })();
     </script>
 </body>

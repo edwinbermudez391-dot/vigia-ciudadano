@@ -2,19 +2,20 @@
 
 namespace Tests\Feature;
 
-// use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
+    use RefreshDatabase;
+
     /**
-     * A basic test example.
+     * La landing pública responde 200 para invitados (ya no redirige a login).
      */
     public function test_the_application_returns_a_successful_response(): void
     {
-        // '/' es ahora un aterrizaje por rol: los invitados van al login.
         $response = $this->get('/');
 
-        $response->assertRedirect(route('login'));
+        $response->assertOk();
     }
 }

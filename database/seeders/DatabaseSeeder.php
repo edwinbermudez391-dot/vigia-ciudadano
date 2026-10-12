@@ -11,9 +11,10 @@ use Illuminate\Database\Seeder;
  * Orquesta el poblado maestro de "Vigía Ciudadano".
  *
  * El orden de llamadas respeta las dependencias de clave foránea:
- * departments -> categories -> users. Cada seeder es idempotente
- * (updateOrCreate sobre su clave natural), así que
- * `php artisan db:seed` puede re-ejecutarse sin duplicar datos.
+ * departments -> categories -> users -> reports -> work_orders + quality_inspections.
+ *
+ * Cada seeder es idempotente (updateOrCreate sobre su clave natural), así que
+ * `php artisan db:seed` puede re-ejecutarse sin duplicar datos ni violaciones.
  */
 class DatabaseSeeder extends Seeder
 {
@@ -25,6 +26,8 @@ class DatabaseSeeder extends Seeder
             DepartmentSeeder::class,
             CategorySeeder::class,
             UserSeeder::class,
+            ReportSeeder::class,
+            WorkOrderSeeder::class,
         ]);
     }
 }

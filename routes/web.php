@@ -59,6 +59,10 @@ Route::prefix('reportes')->name('reports.')->group(function (): void {
         ->name('show');
 });
 
+// Mapa interactivo público: visualización geográfica de todos los reportes.
+Route::get('mapa', [\App\Http\Controllers\Web\MapController::class, '__invoke'])
+    ->name('map');
+
 Route::middleware('auth')->group(function (): void {
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 
@@ -102,6 +106,8 @@ Route::middleware('auth')->group(function (): void {
         ->name('admin.')
         ->group(function (): void {
             Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
+
+            Route::get('analitica', [AdminController::class, 'analytics'])->name('analytics');
 
             Route::post('incidencias/{report}/asignar', [AdminController::class, 'assign'])
                 ->whereNumber('report')

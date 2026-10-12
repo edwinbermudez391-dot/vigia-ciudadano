@@ -13,19 +13,18 @@ use RuntimeException;
 /**
  * Usuarios de prueba listos para autenticarse contra la API (Sanctum).
  *
- * Clave natural: `email` (UNIQUE). Credenciales para los tres perfiles institucionales:
- * contraseña "password123", que el cast `hashed` del modelo cifra al persistir.
- * Re-ejecutar el seeder restablece esa contraseña, útil si una prueba la cambió.
- *
- * Nota: Los ciudadanos reportan incidencias de forma pública y anónima sin necesidad de cuenta.
+ * Clave natural: `email` (UNIQUE). Contraseña "password" para todos los usuarios,
+ * que el cast `hashed` del modelo cifra al persistir. Re-ejecutar el seeder
+ * restablece esa contraseña, útil si una prueba la cambió.
  */
 class UserSeeder extends Seeder
 {
-    private const TEST_PASSWORD = 'password123';
+    private const TEST_PASSWORD = 'password';
 
     public function run(): void
     {
         $users = [
+            // Superadmin (1)
             [
                 'name' => 'Administrador Vigía',
                 'email' => 'admin@vigia.gov.co',
@@ -33,18 +32,80 @@ class UserSeeder extends Seeder
                 'role' => UserRole::SuperAdmin,
                 'department_id' => null,
             ],
+
+            // Quality Inspectors (2)
+            [
+                'name' => 'Inspector de Calidad Uno',
+                'email' => 'inspector1@calidad.gov.co',
+                'phone' => '+57 303 444 0001',
+                'role' => UserRole::QualityInspector,
+                'department_id' => null,
+            ],
+            [
+                'name' => 'Inspector de Calidad Dos',
+                'email' => 'inspector2@calidad.gov.co',
+                'phone' => '+57 303 444 0002',
+                'role' => UserRole::QualityInspector,
+                'department_id' => null,
+            ],
+
+            // Contractors (3) — uno por departamento operativo
             [
                 'name' => 'Cuadrilla Infraestructura',
                 'email' => 'cuadrilla@infraestructura.com',
-                'phone' => '+57 302 333 0003',
+                'phone' => '+57 302 333 0001',
                 'role' => UserRole::Contractor,
-                'department_id' => $this->departmentId('SEC_INFRA'),
+                'department_id' => $this->departmentId('OBRAS_PUB'),
             ],
             [
-                'name' => 'Inspector de Calidad',
-                'email' => 'inspector@calidad.gov.co',
-                'phone' => '+57 303 444 0004',
-                'role' => UserRole::QualityInspector,
+                'name' => 'Cuadrilla Movilidad',
+                'email' => 'cuadrilla@movilidad.com',
+                'phone' => '+57 302 333 0002',
+                'role' => UserRole::Contractor,
+                'department_id' => $this->departmentId('MOVIL'),
+            ],
+            [
+                'name' => 'Cuadrilla Servicios Públicos',
+                'email' => 'cuadrilla@servicios.com',
+                'phone' => '+57 302 333 0003',
+                'role' => UserRole::Contractor,
+                'department_id' => $this->departmentId('SERV_PUB'),
+            ],
+
+            // Citizens (5)
+            [
+                'name' => 'Ciudadano Uno',
+                'email' => 'ciudadano1@test.com',
+                'phone' => '+57 310 555 0001',
+                'role' => UserRole::Citizen,
+                'department_id' => null,
+            ],
+            [
+                'name' => 'Ciudadano Dos',
+                'email' => 'ciudadano2@test.com',
+                'phone' => '+57 310 555 0002',
+                'role' => UserRole::Citizen,
+                'department_id' => null,
+            ],
+            [
+                'name' => 'Ciudadano Tres',
+                'email' => 'ciudadano3@test.com',
+                'phone' => '+57 310 555 0003',
+                'role' => UserRole::Citizen,
+                'department_id' => null,
+            ],
+            [
+                'name' => 'Ciudadano Cuatro',
+                'email' => 'ciudadano4@test.com',
+                'phone' => '+57 310 555 0004',
+                'role' => UserRole::Citizen,
+                'department_id' => null,
+            ],
+            [
+                'name' => 'Ciudadano Cinco',
+                'email' => 'ciudadano5@test.com',
+                'phone' => '+57 310 555 0005',
+                'role' => UserRole::Citizen,
                 'department_id' => null,
             ],
         ];

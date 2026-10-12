@@ -133,6 +133,77 @@ final class CitizenReportController extends Controller
     }
 
     /**
+     * GET /api/v1/reports/map-data — dataset público para el mapa interactivo.
+     *
+     * Endpoint abierto (sin auth) que devuelve los datos mínimos necesarios
+     * para renderizar marcadores en el mapa: id, ticket_code, coordenadas,
+     * estado, categoría y foto. Solo reportes activos (no cerrados) para
+     * mantener la vista limpia; los cerrados se consultan por ticket.
+     */
+    public function mapData(): \Illuminate\Http\JsonResponse
+    {
+        $reports = \App\Models\Report::query()
+            ->where('status', '!=', \App\Enums\ReportStatus::Closed->value)
+            ->with('category')
+            ->select([
+                'id',
+                'ticket_code',
+                'title',
+                'status',
+                'latitude',
+                'longitude',
+                'damage_photo_url',
+                'address_reference',
+                'category_id',
+                'created_at',
+            ])
+            ->get();
+
+        $photo = fn (?string $path): ?string => $path === null
+            ? null
+            : \Illuminate\Support\Facades\Storage::disk('public')->url($path);
+
+        $statusColors = [
+            'reported' => '#eab308',       // Amarillo — Pendiente
+            'in_progress' => '#3b82f6',     // Azul — En progreso
+            'under_inspection' => '#8b5cf6', // Violeta — Bajo inspección
+            'rework' => '#ef4444',          // Rojo — Retrabajo
+            'closed' => '#22c55e',          // Verde — Cerrado
+        ];
+
+        $data = $reports->map(fn (\App\Models\Report $report) => [
+            'id' => $report->id,
+            'ticket_code' => $report->ticket_code,
+            'title' => $report->title,
+            'latitude' => (float) $report->latitude,
+            'longitude' => (float) $report->longitude,
+            'status' => $report->status->value,
+            'status_label' => match ($report->status->value) {
+                'reported' => 'Reportado',
+                'in_progress' => 'En progreso',
+                'under_inspection' => 'Bajo inspección',
+                'rework' => 'Retrabajo',
+                'closed' => 'Cerrado',
+                default => $report->status->value,
+            },
+            'category_name' => $report->category?->name ?? 'Sin categoría',
+            'photo_url' => $photo($report->damage_photo_url),
+            'address_reference' => $report->address_reference,
+            'marker_color' => $statusColors[$report->status->value] ?? '#94a3b8',
+            'created_at' => $report->created_at->format('d/m/Y'),
+            'detail_url' => route('reports.show', ['ticket_code' => $report->ticket_code]),
+        ]);
+
+        return response()->json([
+            'data' => $data->values()->all(),
+            'meta' => [
+                'total' => $data->count(),
+                'center' => ['lat' => 3.0095, 'lng' => -76.4849, 'zoom' => 14],
+            ],
+        ]);
+    }
+
+    /**
      * POST /api/v1/reports/{id}/subscribe — seguimiento de novedades.
      */
     public function subscribe(Request $request, int $id): JsonResponse

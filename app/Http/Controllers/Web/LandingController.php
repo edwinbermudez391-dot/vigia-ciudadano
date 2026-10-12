@@ -59,13 +59,17 @@ final class LandingController extends Controller
             ->where('decision', InspectionDecision::Approved->value)
             ->count();
 
-        // SLA ≈ horas entre reporte y cierre de las incidencias cerradas.
+        // SLA ≈ días entre reporte y cierre de las incidencias cerradas.
+        // Cálculo en PHP (no SQL) para ser compatible con SQLite y MySQL.
         // No existe columna closed_at: updated_at es el sello del cierre,
         // el mismo criterio que AdminController::dashboard().
-        $slaDays = Report::query()
+        $closedReports = Report::query()
             ->where('status', ReportStatus::Closed->value)
-            ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, created_at, updated_at) / 24) as avg_days')
-            ->value('avg_days');
+            ->get(['created_at', 'updated_at']);
+
+        $slaDays = $closedReports->isNotEmpty()
+            ? $closedReports->avg(fn (Report $r) => $r->created_at->diffInHours($r->updated_at) / 24)
+            : null;
 
         return [
             'active' => Report::query()

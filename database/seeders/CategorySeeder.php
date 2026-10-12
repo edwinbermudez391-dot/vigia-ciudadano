@@ -22,30 +22,84 @@ class CategorySeeder extends Seeder
     {
         // code de dependencia => categorías que administra.
         $catalog = [
-            'SEC_INFRA' => [
+            'OBRAS_PUB' => [
                 [
                     'name' => 'Baches y Malla Vial',
-                    'sla_hours' => 72,
+                    'sla_hours' => 48,
                     'description' => 'Hundimientos, baches, deterioro o pérdida de pavimentación en vías urbanas y rurales.',
                 ],
-            ],
-            'ALUM_PUB' => [
                 [
-                    'name' => 'Luminaria Apagada / En Falla',
-                    'sla_hours' => 48,
-                    'description' => 'Puntos de alumbrado público sin iluminación, parpadeo, cables expuestos o postes dañados.',
+                    'name' => 'Grietas en Fachadas y Muros',
+                    'sla_hours' => 72,
+                    'description' => 'Fisuras, grietas o deterioro estructural en fachadas de edificios públicos y muros de contención.',
+                ],
+                [
+                    'name' => 'Andenes Deteriorados',
+                    'sla_hours' => 96,
+                    'description' => 'Baldosas rotas, hundimientos o levantamientos en andenes peatonales que representan riesgo de caída.',
                 ],
             ],
-            'ACUE_ALC' => [
+            'MOVIL' => [
+                [
+                    'name' => 'Semáforo en Falla',
+                    'sla_hours' => 12,
+                    'description' => 'Semáforos sin funcionamiento, parpadeo intermitente o luces desincronizadas en cruces viales.',
+                ],
+                [
+                    'name' => 'Señalización Vial Deteriorada',
+                    'sla_hours' => 48,
+                    'description' => 'Señales de tránsito dañadas, borrosas, faltantes o inclinadas en vías principales y secundarias.',
+                ],
+                [
+                    'name' => 'Congestionamiento Vial Anormal',
+                    'sla_hours' => 4,
+                    'description' => 'Tapones inusuales por accidentes, vehículos averiados o cierre no autorizado de vías.',
+                ],
+            ],
+            'ALUM' => [
+                [
+                    'name' => 'Luminaria Apagada o en Falla',
+                    'sla_hours' => 24,
+                    'description' => 'Puntos de alumbrado público sin iluminación, parpadeo constante o encendido diurno permanente.',
+                ],
+                [
+                    'name' => 'Cableado Expuesto',
+                    'sla_hours' => 12,
+                    'description' => 'Cables colgantes, postes dañados o conexiones eléctricas expuestas en espacio público.',
+                ],
+            ],
+            'AMB' => [
+                [
+                    'name' => 'Árbol en Riesgo de Caída',
+                    'sla_hours' => 24,
+                    'description' => 'Árboles inclinados, con ramas secas o raíces expuestas que amenazan infraestructura o personas.',
+                ],
+                [
+                    'name' => 'Basuras y Escombros en Vía Pública',
+                    'sla_hours' => 48,
+                    'description' => 'Acumulación de residuos sólidos, escombros de construcción o residuos vegetales en espacio público.',
+                ],
+                [
+                    'name' => 'Contaminación Auditiva',
+                    'sla_hours' => 24,
+                    'description' => 'Ruidos excesivos por obras, establecimientos comerciales o actividades industriales fuera de norma.',
+                ],
+            ],
+            'SERV_PUB' => [
                 [
                     'name' => 'Fuga de Agua Potable',
-                    'sla_hours' => 24,
+                    'sla_hours' => 12,
                     'description' => 'Pérdida de agua en redes de acueducto: rotura de tubería, brocales o válvulas en vía pública.',
                 ],
                 [
-                    'name' => 'Alcantarillado / Sumidero Tapado',
+                    'name' => 'Alcantarillado o Sumidero Tapado',
                     'sla_hours' => 48,
-                    'description' => 'Aguadas por alcantarillado obstruido, sumideros tapados o malos olores en redes de desagüe.',
+                    'description' => 'Aguados por alcantarillado obstruido, sumideros tapados o malos olores en redes de desagüe.',
+                ],
+                [
+                    'name' => 'Sin Suministro de Agua',
+                    'sla_hours' => 8,
+                    'description' => 'Interrupción del servicio de acueducto en viviendas o zonas residenciales sin aviso previo.',
                 ],
             ],
         ];

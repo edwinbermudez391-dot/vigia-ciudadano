@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Documentación - Vigía Ciudadano</title>
+    <style>
+        body { font-family: Calibri, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1 { color: #1e40af; border-bottom: 3px solid #1e40af; padding-bottom: 10px; margin-top: 30px; }
+        h2 { color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 8px; margin-top: 25px; }
+        h3 { color: #3b82f6; margin-top: 20px; }
+        h4 { color: #60a5fa; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th { background: #2563eb; color: white; padding: 10px; text-align: left; }
+        td { border: 1px solid #cbd5e1; padding: 8px; }
+        tr:nth-child(even) { background: #f8fafc; }
+        .role-box { background: #eff6ff; border-left: 4px solid #2563eb; padding: 15px; margin: 15px 0; }
+        .highlight { background: #fef3c7; padding: 10px; border-left: 4px solid #f59e0b; margin: 15px 0; }
+        code { background: #f8fafc; padding: 2px 6px; border-radius: 3px; font-family: Consolas, monospace; }
+    </style>
+</head>
+<body>
+
+<h1>DOCUMENTACIÓN TÉCNICA - SISTEMA VIGÍA CIUDADANO</h1>
+<p style="font-size: 12pt; color: #666;">Fecha: <?= date('d/m/Y') ?></p>
+
+<h2>1. RESUMEN DEL SISTEMA</h2>
+<p><strong>Vigía Ciudadano</strong> es una plataforma de gestión de reportes ciudadanos que permite reportar incidencias urbanas y hacer seguimiento transparente hasta su cierre.</p>
+
+<h3>Características Principales</h3>
+<ul>
+    <li>Reportes públicos (anónimos o vinculados a cuenta)</li>
+    <li>Código de ticket único (REP-AAAA-NNNN)</li>
+    <li>Mapa interactivo con Leaflet.js</li>
+    <li>Suscripciones para notificaciones</li>
+    <li>Flujo completo: Reporte → Asignación → Ejecución → Inspección → Cierre</li>
+    <li>API REST + Portal Web</li>
+    <li>Gestión de contratistas e inspectores</li>
+</ul>
+
+<h2>2. ROLES DE USUARIO</h2>
+
+<div class="role-box">
+<h3>🏛️ SUPERADMIN (Alcaldía)</h3>
+<p><strong>Permisos:</strong></p>
+<ul>
+    <li>Dashboard operativo con métricas en tiempo real</li>
+    <li>Analítica avanzada (KPIs, gráficos, tendencias)</li>
+    <li>Asignación de órdenes de trabajo a contratistas</li>
+    <li>Gestión de contratistas (alta, listado)</li>
+    <li>Acceso a todos los reportes</li>
+</ul>
+<p><strong>Rutas:</strong> /admin, /admin/analitica, /admin/contratistas</p>
+</div>
+
+<div class="role-box">
+<h3>🔨 CONTRACTOR (Contratista)</h3>
+<p><strong>Permisos:</strong></p>
+<ul>
+    <li>Consulta de órdenes asignadas</li>
+    <li>Inicio de ejecución de obra</li>
+    <li>Finalización con evidencia fotográfica</li>
+    <li>Solo accede a sus propias órdenes (IDOR protection)</li>
+</ul>
+<p><strong>Rutas:</strong> /ordenes, /ordenes/{id}/iniciar, /ordenes/{id}/finalizar</p>
+</div>
+
+<div class="role-box">
+<h3>🔍 QUALITY_INSPECTOR (Inspector)</h3>
+<p><strong>Permisos:</strong></p>
+<ul>
+    <li>Cola de inspecciones pendientes</li>
+    <li>Formulario de auditoría con checklist</li>
+    <li>Dictamen: Aprobado o Retrabajo</li>
+    <li>Foto de verificación y geolocalización</li>
+</ul>
+<p><strong>Rutas:</strong> /inspector/inspecciones, /inspector/auditoria/{id}</p>
+</div>
+
+<div class="role-box">
+<h3>👤 CITIZEN (Ciudadano)</h3>
+<p><strong>Permisos:</strong></p>
+<ul>
+    <li>Radicar reportes (con o sin cuenta)</li>
+    <li>Consultar trazabilidad por ticket</li>
+    <li>Suscribirse a notificaciones</li>
+    <li>Acceso a mapa interactivo</li>
+</ul>
+<p><strong>Nota:</strong> NO puede hacer login al panel institucional</p>
+</div>
+
+<h2>3. MODELOS DE DATOS</h2>
+
+<h3>3.1 User</h3>
+<table>
+<tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr>
+<tr><td>id</td><td>integer</td><td>Clave primaria</td></tr>
+<tr><td>name</td><td>string</td><td>Nombre completo</td></tr>
+<tr><td>email</td><td>string</td><td>Email único</td></tr>
+<tr><td>role</td><td>enum</td><td>citizen, superadmin, contractor, quality_inspector</td></tr>
+<tr><td>department_id</td><td>integer</td><td>Dependencia (nullable)</td></tr>
+<tr><td>is_active</td><td>boolean</td><td>Estado (default: true)</td></tr>
+</table>
+
+<h3>3.2 Report</h3>
+<table>
+<tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr>
+<tr><td>ticket_code</td><td>string (unique)</td><td>REP-AAAA-NNNN</td></tr>
+<tr><td>user_id</td><td>integer</td><td>Autor (nullable para anónimos)</td></tr>
+<tr><td>category_id</td><td>integer</td><td>Categoría del daño</td></tr>
+<tr><td>title</td><td>string</td><td>Título (5-150 chars)</td></tr>
+<tr><td>description</td><td>text</td><td>Descripción (15-1000 chars)</td></tr>
+<tr><td>damage_photo_url</td><td>string</td><td>Ruta de foto</td></tr>
+<tr><td>latitude/longitude</td><td>decimal</td><td>GPS</td></tr>
+<tr><td>status</td><td>enum</td><td>Estado del ciclo</td></tr>
+</table>
+
+<h3>3.3 WorkOrder</h3>
+<table>
+<tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr>
+<tr><td>report_id</td><td>integer (unique)</td><td>Reporte origen (1:1)</td></tr>
+<tr><td>contractor_id</td><td>integer</td><td>Contratista responsable</td></tr>
+<tr><td>scheduled_date</td><td>date</td><td>Fecha programada</td></tr>
+<tr><td>completion_date</td><td>datetime</td><td>Fecha finalización</td></tr>
+<tr><td>work_description</td><td>text</td><td>Trabajo realizado</td></tr>
+<tr><td>solution_photo_url</td><td>string</td><td>Foto de solución</td></tr>
+<tr><td>status</td><td>enum</td><td>assigned, in_execution, completed</td></tr>
+</table>
+
+<h3>3.4 QualityInspection</h3>
+<table>
+<tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr>
+<tr><td>work_order_id</td><td>integer</td><td>Orden inspeccionada</td></tr>
+<tr><td>inspector_id</td><td>integer</td><td>Inspector</td></tr>
+<tr><td>checklist_results</td><td>json</td><td>Resultados checklist</td></tr>
+<tr><td>decision</td><td>enum</td><td>approved, rework</td></tr>
+<tr><td>rejection_reason</td><td>text</td><td>Motivo rechazo (nullable)</td></tr>
+<tr><td>verification_photo_url</td><td>string</td><td>Foto verificación</td></tr>
+<tr><td>inspector_latitude/longitude</td><td>decimal</td><td>GPS inspector</td></tr>
+</table>
+
+<h2>4. ESTADOS DEL SISTEMA</h2>
+
+<h3>4.1 ReportStatus</h3>
+<table>
+<tr><th>Estado</th><th>Color</th><th>Descripción</th></tr>
+<tr><td>reported</td><td>🟡 Amarillo</td><td>Recién radicado</td></tr>
+<tr><td>in_progress</td><td>🔵 Azul</td><td>Orden asignada</td></tr>
+<tr><td>under_inspection</td><td>🟣 Violeta</td><td>Pendiente inspección</td></tr>
+<tr><td>rework</td><td>🔴 Rojo</td><td>Rechazada, requiere corrección</td></tr>
+<tr><td>closed</td><td>🟢 Verde</td><td>Aprobada y cerrada</td></tr>
+</table>
+
+<h3>4.2 WorkOrderStatus</h3>
+<table>
+<tr><th>Estado</th><th>Descripción</th></tr>
+<tr><td>assigned</td><td>Orden creada, pendiente inicio</td></tr>
+<tr><td>in_execution</td><td>Ejecución en sitio</td></tr>
+<tr><td>completed</td><td>Obra finalizada</td></tr>
+</table>
+
+<h3>4.3 InspectionDecision</h3>
+<table>
+<tr><th>Decisión</th><th>Consecuencia</th></tr>
+<tr><td>approved</td><td>Reporte → closed</td></tr>
+<tr><td>rework</td><td>Reporte → rework, Orden → in_execution</td></tr>
+</table>
+
+<h2>5. API REST ENDPOINTS</h2>
+
+<h3>5.1 Públicos</h3>
+<p><code>GET /api/v1/reports/map-data</code> - Dataset para mapa</p>
+
+<h3>5.2 Autenticados</h3>
+<p><code>GET /api/v1/reports/{ticket_code}</code> - Detalle reporte</p>
+<p><code>GET /api/v1/reports/nearby</code> - Reportes cercanos</p>
+<p><code>POST /api/v1/reports</code> - Crear reporte</p>
+<p><code>POST /api/v1/reports/{id}/subscribe</code> - Suscribirse</p>
+
+<h3>5.3 SuperAdmin</h3>
+<p><code>POST /api/v1/work-orders/assign</code> - Asignar orden</p>
+
+<h3>5.4 Contractor</h3>
+<p><code>GET /api/v1/work-orders</code> - Mis órdenes</p>
+<p><code>PATCH /api/v1/work-orders/{id}/start</code> - Iniciar</p>
+<p><code>POST /api/v1/work-orders/{id}/complete</code> - Finalizar</p>
+
+<h3>5.5 Inspector</h3>
+<p><code>GET /api/v1/inspections/pending</code> - Cola inspecciones</p>
+<p><code>POST /api/v1/work-orders/{id}/inspections</code> - Registrar dictamen</p>
+
+<h2>6. SERVICIOS DE NEGOCIO</h2>
+
+<h3>6.1 ReportIntake</h3>
+<p><strong>Responsabilidad:</strong> Alta de reportes con ticket y foto</p>
+<ul>
+    <li>Genera código único (REP-AAAA-NNNN)</li>
+    <li>Sube foto con nombre derivado del ticket</li>
+    <li>Transacción DB con compensación</li>
+    <li>Retry automático en colisiones</li>
+</ul>
+
+<h3>6.2 TicketCodeGenerator</h3>
+<p><strong>Responsabilidad:</strong> Generación de tickets secuenciales</p>
+<ul>
+    <li>SELECT FOR UPDATE para concurrencia</li>
+    <li>Cálculo numérico del máximo</li>
+    <li>Padding de 4 dígitos mínimo</li>
+</ul>
+
+<h3>6.3 WorkOrderDispatcher</h3>
+<p><strong>Responsabilidad:</strong> Asignación de órdenes</p>
+<ul>
+    <li>Valida estado asignable (reported/rework)</li>
+    <li>Valida contratista activo</li>
+    <li>Transacción atómica (orden + reporte)</li>
+</ul>
+
+<h3>6.4 WorkOrderExecution</h3>
+<p><strong>Responsabilidad:</strong> Ejecución de obras</p>
+<ul>
+    <li>start(): assigned → in_execution</li>
+    <li>complete(): in_execution → completed</li>
+    <li>Idempotente en start()</li>
+</ul>
+
+<h3>6.5 QualityInspectionRecorder</h3>
+<p><strong>Responsabilidad:</strong> Registro de inspecciones</p>
+<ul>
+    <li>approved: reporte → closed</li>
+    <li>rework: reporte → rework, orden → in_execution</li>
+    <li>Transacción atómica</li>
+</ul>
+
+<h3>6.6 ImageUploader</h3>
+<p><strong>Responsabilidad:</strong> Almacenamiento seguro de imágenes</p>
+<ul>
+    <li>Extensión derivada de MIME real (finfo)</li>
+    <li>Nombre base aportado por llamante</li>
+    <li>Compensación en fallos</li>
+</ul>
+
+<h2>7. SEGURIDAD</h2>
+
+<h3>7.1 Validaciones de Imágenes</h3>
+<ul>
+    <li>Validación por contenido real (magic bytes)</li>
+    <li>Formatos: JPEG, PNG, WebP</li>
+    <li>Máximo 5MB</li>
+    <li>Máximo 4000x4000 píxeles (decompression bomb protection)</li>
+</ul>
+
+<h3>7.2 Autorización</h3>
+<ul>
+    <li>Defense-in-Depth: Middleware + FormRequest + lógica</li>
+    <li>IDOR Protection: Verificación de propiedad</li>
+    <li>Cuentas deben estar activas (is_active)</li>
+</ul>
+
+<h3>7.3 Rate Limiting</h3>
+<ul>
+    <li>Login: 10 intentos/minuto</li>
+    <li>Reportes: throttle configurable</li>
+</ul>
+
+<h2>8. NOTIFICACIONES</h2>
+
+<h3>8.1 ReportObserver</h3>
+<p>Detecta cambios de estado y notifica automáticamente:</p>
+<ul>
+    <li>Suscriptores del reporte</li>
+    <li>citizen_email (reportes anónimos)</li>
+    <li>Contratista (cuando se asigna orden)</li>
+</ul>
+
+<h3>8.2 ReportStatusChangedNotification</h3>
+<p>Email con: ticket, estado anterior/nuevo, observaciones, enlace</p>
+
+<h3>8.3 WorkOrderAssignedNotification</h3>
+<p>Email al contratista: ticket, categoría, dirección, fecha programada</p>
+
+<h2>9. FLUJO COMPLETO</h2>
+
+<ol>
+<li><strong>Ciudadano radica reporte</strong> (público o autenticado)</li>
+<li><strong>Sistema genera ticket único</strong> (REP-AAAA-NNNN)</li>
+<li><strong>Reporte en estado "reported"</strong></li>
+<li><strong>SuperAdmin asigna orden</strong> a contratista</li>
+<li><strong>Reporte pasa a "in_progress"</strong></li>
+<li><strong>Orden en estado "assigned"</strong></li>
+<li><strong>Contratista inicia ejecución</strong></li>
+<li><strong>Orden pasa a "in_execution"</strong></li>
+<li><strong>Contratista finaliza con evidencia</strong></li>
+<li><strong>Orden pasa a "completed"</strong></li>
+<li><strong>Reporte pasa a "under_inspection"</strong></li>
+<li><strong>Inspector audita obra</strong> con checklist</li>
+<li><strong>Decisión:</strong>
+    <ul>
+        <li>Aprobado → Reporte "closed"</li>
+        <li>Rechazado → Reporte "rework", Orden "in_execution" → ciclo reinicia</li>
+    </ul>
+</li>
+</ol>
+
+<h2>10. TECNOLOGÍAS</h2>
+<table>
+<tr><th>Componente</th><th>Tecnología</th></tr>
+<tr><td>Backend</td><td>Laravel 12.x (PHP 8.2+)</td></tr>
+<tr><td>Autenticación</td><td>Sanctum</td></tr>
+<tr><td>Base de Datos</td><td>SQLite / MySQL</td></tr>
+<tr><td>Frontend</td><td>Blade + Vite</td></tr>
+<tr><td>Mapas</td><td>Leaflet.js</td></tr>
+<tr><td>Testing</td><td>PHPUnit</td></tr>
+</table>
+
+<hr style="margin-top: 40px;">
+<p style="text-align: center; color: #666; font-size: 10pt;">
+    Documento generado automáticamente desde el código fuente<br>
+    Sistema Vigía Ciudadano - <?= date('Y') ?>
+</p>
+
+</body>
+</html>

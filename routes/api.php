@@ -21,6 +21,10 @@ use Illuminate\Support\Facades\Route;
 
 
 Route::prefix('v1')->name('api.v1.')->group(function (): void {
+    // Dataset público para el mapa interactivo (sin auth — información pública).
+    Route::get('reports/map-data', [CitizenReportController::class, 'mapData'])
+        ->name('reports.map-data');
+
     // Consulta de detalle: ticket codes no enumerables sin autenticación.
     Route::get('reports/{ticket_code}', [CitizenReportController::class, 'show'])
         ->where('ticket_code', 'REP-\d{4}-\d{4,5}')

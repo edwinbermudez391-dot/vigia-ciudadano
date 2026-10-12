@@ -54,6 +54,9 @@
                             <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
                                 🏛️ Panel
                             </x-nav-link>
+                            <x-nav-link :href="route('admin.analytics')" :active="request()->routeIs('admin.analytics*')">
+                                📊 Analítica
+                            </x-nav-link>
                             <x-nav-link :href="route('admin.contractors')" :active="request()->routeIs('admin.contractors*')">
                                 👷 Cuadrillas
                             </x-nav-link>
@@ -94,6 +97,21 @@
                             </svg>
                             Volver al inicio
                         </a>
+                    @elseif (request()->routeIs('map'))
+                        {{-- En la página del mapa, mostrar botón de regreso y radicar reporte --}}
+                        <div class="flex items-center gap-3">
+                            <a href="{{ route('home') }}"
+                               class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-[#1f5142] bg-white border border-[#d5e8e0] hover:bg-[#f0faf5] hover:text-[#087b5f] hover:border-[#b9daca] transition shadow-sm">
+                                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                </svg>
+                                Regresar
+                            </a>
+                            <a href="{{ route('reports.create') }}"
+                               class="rounded-xl bg-[#087b5f] px-4 py-2 text-sm font-semibold text-white shadow-sm transition duration-200 hover:bg-[#05664e] active:scale-[0.98]">
+                                Radicar Reporte
+                            </a>
+                        </div>
                     @else
                         <a href="{{ route('login') }}"
                            class="rounded-xl bg-[#087b5f] px-4 py-2 text-sm font-semibold text-white shadow-sm transition duration-200 hover:bg-[#05664e] active:scale-[0.98]">
@@ -112,6 +130,7 @@
                         <x-nav-link :href="route('inspector.queue')" :active="request()->routeIs('inspector.*')">🔍 Inspecciones</x-nav-link>
                     @else
                         <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">🏛️ Panel</x-nav-link>
+                        <x-nav-link :href="route('admin.analytics')" :active="request()->routeIs('admin.analytics*')">📊 Analítica</x-nav-link>
                         <x-nav-link :href="route('admin.contractors')" :active="request()->routeIs('admin.contractors*')">👷 Cuadrillas</x-nav-link>
                     @endif
                 </div>
