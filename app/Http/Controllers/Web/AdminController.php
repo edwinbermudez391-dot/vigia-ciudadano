@@ -166,7 +166,7 @@ final class AdminController extends Controller
     {
         // Filtros
         $period = $request->get('period', 'month'); // week, month, year
-        $departmentId = $request->get('department_id');
+        $departmentId = (int) $request->get('department_id') ?: null;
 
         // Calcular rango de fechas según período
         $dateRange = $this->getDateRange($period);
@@ -235,11 +235,11 @@ final class AdminController extends Controller
     {
         // Total reportes mes actual vs anterior
         $currentTotal = (clone $baseQuery)
-            ->whereBetween('created_at', [$dateRange['start'], $dateRange['end']])
+            ->whereBetween('reports.created_at', [$dateRange['start'], $dateRange['end']])
             ->count();
 
         $previousTotal = (clone $baseQuery)
-            ->whereBetween('created_at', [$dateRange['prev_start'], $dateRange['prev_end']])
+            ->whereBetween('reports.created_at', [$dateRange['prev_start'], $dateRange['prev_end']])
             ->count();
 
         $variation = $previousTotal > 0
@@ -248,8 +248,8 @@ final class AdminController extends Controller
 
         // Tiempo promedio de resolución (horas desde reported hasta closed)
         $avgResolutionHours = (clone $baseQuery)
-            ->where('status', ReportStatus::Closed->value)
-            ->whereBetween('updated_at', [$dateRange['start'], $dateRange['end']])
+            ->where('reports.status', ReportStatus::Closed->value)
+            ->whereBetween('reports.updated_at', [$dateRange['start'], $dateRange['end']])
             ->get()
             ->avg(function($report) {
                 return $report->created_at->diffInHours($report->updated_at);
@@ -258,7 +258,7 @@ final class AdminController extends Controller
         // Tasa de aprobación en primer intento
         $totalInspections = QualityInspection::query()
             ->whereHas('workOrder.report', function($q) use ($baseQuery, $dateRange) {
-                $q->mergeConstraintsFrom($baseQuery->getQuery());
+                $q->mergeConstraintsFrom($baseQuery);
             })
             ->whereBetween('inspected_at', [$dateRange['start'], $dateRange['end']])
             ->count();
@@ -266,7 +266,7 @@ final class AdminController extends Controller
         $approvedFirstTime = QualityInspection::query()
             ->where('decision', InspectionDecision::Approved->value)
             ->whereHas('workOrder.report', function($q) use ($baseQuery, $dateRange) {
-                $q->mergeConstraintsFrom($baseQuery->getQuery());
+                $q->mergeConstraintsFrom($baseQuery);
             })
             ->whereBetween('inspected_at', [$dateRange['start'], $dateRange['end']])
             ->count();
@@ -294,8 +294,8 @@ final class AdminController extends Controller
     private function calculateSLACompliance($baseQuery, array $dateRange): float
     {
         $closedReports = (clone $baseQuery)
-            ->where('status', ReportStatus::Closed->value)
-            ->whereBetween('updated_at', [$dateRange['start'], $dateRange['end']])
+            ->where('reports.status', ReportStatus::Closed->value)
+            ->whereBetween('reports.updated_at', [$dateRange['start'], $dateRange['end']])
             ->with('category')
             ->get();
 
@@ -321,7 +321,7 @@ final class AdminController extends Controller
     {
         // Distribución por categoría
         $byCategory = (clone $baseQuery)
-            ->whereBetween('created_at', [$dateRange['start'], $dateRange['end']])
+            ->whereBetween('reports.created_at', [$dateRange['start'], $dateRange['end']])
             ->join('categories', 'reports.category_id', '=', 'categories.id')
             ->select('categories.name', \DB::raw('count(*) as total'))
             ->groupBy('categories.id', 'categories.name')
@@ -331,7 +331,7 @@ final class AdminController extends Controller
 
         // Distribución por departamento
         $byDepartment = (clone $baseQuery)
-            ->whereBetween('created_at', [$dateRange['start'], $dateRange['end']])
+            ->whereBetween('reports.created_at', [$dateRange['start'], $dateRange['end']])
             ->join('categories', 'reports.category_id', '=', 'categories.id')
             ->join('departments', 'categories.department_id', '=', 'departments.id')
             ->select('departments.name', \DB::raw('count(*) as total'))
@@ -352,12 +352,12 @@ final class AdminController extends Controller
             $labels[] = 'Sem ' . $weekStart->format('d/m');
 
             $received[] = (clone $baseQuery)
-                ->whereBetween('created_at', [$weekStart, $weekEnd])
+                ->whereBetween('reports.created_at', [$weekStart, $weekEnd])
                 ->count();
 
             $resolved[] = (clone $baseQuery)
-                ->where('status', ReportStatus::Closed->value)
-                ->whereBetween('updated_at', [$weekStart, $weekEnd])
+                ->where('reports.status', ReportStatus::Closed->value)
+                ->whereBetween('reports.updated_at', [$weekStart, $weekEnd])
                 ->count();
         }
 
@@ -381,8 +381,10 @@ final class AdminController extends Controller
     /**
      * Obtiene rendimiento por contratista
      */
-    private function getContractorPerformance(array $dateRange, ?int $departmentId): \Illuminate\Support\Collection
+    private function getContractorPerformance(array $dateRange, int|string|null $departmentId): \Illuminate\Support\Collection
     {
+        $departmentId = $departmentId ? (int) $departmentId : null;
+
         $contractors = User::query()
             ->where('role', UserRole::Contractor->value)
             ->where('is_active', true);

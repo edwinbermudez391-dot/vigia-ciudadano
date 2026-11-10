@@ -34,21 +34,37 @@ final class EnsureUserHasRole
         $user = $request->user();
 
         if ($user === null) {
-            return response()->json([
-                'message' => 'Debes autenticarte para acceder a este recurso.',
-            ], 401);
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Debes autenticarte para acceder a este recurso.',
+                ], 401);
+            }
+
+            return redirect()->route('login')->withErrors([
+                'email' => 'Debes autenticarte para acceder a esta sección.',
+            ]);
         }
 
         if ($user->is_active !== true) {
-            return response()->json([
-                'message' => 'Tu cuenta está desactivada. Contacta al administrador del sistema.',
-            ], 403);
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Tu cuenta está desactivada. Contacta al administrador del sistema.',
+                ], 403);
+            }
+
+            return redirect()->route('login')->withErrors([
+                'email' => 'Tu cuenta está desactivada. Contacta al administrador del sistema.',
+            ]);
         }
 
         if (! in_array($user->role?->value, $allowed, true)) {
-            return response()->json([
-                'message' => 'Tu rol no está autorizado para operar estos endpoints.',
-            ], 403);
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Tu rol no está autorizado para operar estos endpoints.',
+                ], 403);
+            }
+
+            abort(403, 'Acceso no autorizado para tu rol actual.');
         }
 
         return $next($request);

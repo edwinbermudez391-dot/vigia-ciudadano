@@ -4,38 +4,34 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="icon" type="image/png" href="{{ asset('imagenes/logo-vigia.png') }}">
     <title>@yield('title', 'Vigía Ciudadano')</title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     @stack('head')
 </head>
-<body class="bg-[#f7fcf9] text-[#062e24] min-h-screen relative overflow-x-hidden antialiased flex flex-col font-sans">
+<body class="bg-background text-text-primary min-h-screen relative overflow-x-hidden antialiased flex flex-col font-sans">
 
     {{-- ==================== ORBES DECORATIVOS (identidad landing) ==================== --}}
     <div class="fixed inset-0 pointer-events-none -z-10 overflow-hidden" aria-hidden="true">
-        <div class="absolute -top-20 -right-20 w-96 h-96 rounded-full bg-[#c5f2df] opacity-60 blur-3xl"></div>
-        <div class="absolute top-1/2 -left-24 w-80 h-80 rounded-full bg-[#edf9d7] opacity-60 blur-3xl"></div>
-        <div class="absolute -bottom-20 right-1/4 w-96 h-96 rounded-full bg-[#cceee0] opacity-50 blur-3xl"></div>
+        <div class="absolute -top-20 -right-20 w-96 h-96 rounded-full bg-primary/10 opacity-60 blur-3xl"></div>
+        <div class="absolute top-1/2 -left-24 w-80 h-80 rounded-full bg-secondary/10 opacity-60 blur-3xl"></div>
+        <div class="absolute -bottom-20 right-1/4 w-96 h-96 rounded-full bg-success/10 opacity-50 blur-3xl"></div>
     </div>
 
     {{-- ============================ NAV ============================ --}}
     @php $user = auth()->user(); @endphp
     @unless (request()->routeIs('login'))
-        <nav class="bg-white/90 backdrop-blur-md border-b border-[#d5e8e0] sticky top-0 z-40 text-[#062e24] shadow-sm">
+        <nav class="bg-white/90 backdrop-blur-md border-b border-border sticky top-0 z-40 text-text-primary shadow-sm">
             <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
                 <a href="{{ route('home') }}" class="flex items-center gap-2.5 transition duration-200 hover:opacity-80">
-                    <span class="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-[#087b5f] to-[#05664e] text-white shadow-md shadow-[#087b5f]/25">
-                        <svg viewBox="0 0 24 24" fill="none" class="size-5" aria-hidden="true">
-                            <path d="M12 2 4 5v6.2c0 4.9 3.4 8.6 8 10.8 4.6-2.2 8-5.9 8-10.8V5l-8-3Z" fill="currentColor" opacity=".22"/>
-                            <path d="M12 2 4 5v6.2c0 4.9 3.4 8.6 8 10.8 4.6-2.2 8-5.9 8-10.8V5l-8-3Z" stroke="currentColor" stroke-width="1.4"/>
-                            <path d="M7.8 11.6c1.1-1.7 2.7-2.6 4.2-2.6s3.1.9 4.2 2.6c-1.1 1.7-2.7 2.6-4.2 2.6s-3.1-.9-4.2-2.6Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
-                            <circle cx="12" cy="11.6" r="1.15" fill="currentColor"/>
-                        </svg>
+                    <span class="grid size-9 place-items-center rounded-xl bg-white shadow-md shadow-primary/25 overflow-hidden">
+                        <img src="{{ asset('imagenes/logo-vigia.png') }}" alt="Logo Vigía Ciudadano" class="h-full w-auto object-contain">
                     </span>
                     <span class="hidden leading-tight sm:block">
-                        <span class="block text-sm font-bold tracking-wide text-[#062e24]">Vigía Ciudadano</span>
-                        <span class="block text-xs text-[#087b5f]">Control de obra pública</span>
+                        <span class="block text-sm font-semibold tracking-tight text-text-primary">Vigía Ciudadano</span>
+                        <span class="block text-xs text-secondary">Control de obra pública</span>
                     </span>
                 </a>
 
@@ -64,13 +60,13 @@
                     </div>
 
                     <div class="flex items-center gap-2">
-                        <div class="hidden items-center gap-2 rounded-xl border border-[#d5e8e0] bg-[#e8f8f0] px-3 py-1.5 sm:flex">
-                            <span class="grid size-7 place-items-center rounded-lg bg-[#087b5f] text-xs font-bold uppercase text-white">
+                        <div class="hidden items-center gap-2 rounded-xl border border-border bg-primary/5 px-3 py-1.5 sm:flex">
+                            <span class="grid size-7 place-items-center rounded-lg bg-primary text-xs font-bold uppercase text-white">
                                 {{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}
                             </span>
                             <span class="leading-tight">
-                                <span class="block max-w-36 truncate text-xs font-medium text-[#062e24]">{{ $user->name }}</span>
-                                <span class="block text-[11px] font-bold text-[#087b5f] bg-[#e8f8f0] px-2.5 py-1 rounded-full">
+                                <span class="block max-w-36 truncate text-xs font-medium text-text-primary">{{ $user->name }}</span>
+                                <span class="block text-[11px] font-semibold text-secondary bg-secondary/10 px-2.5 py-1 rounded-full">
                                     {{ \App\Support\RoleUi::label($user->role) }}
                                 </span>
                             </span>

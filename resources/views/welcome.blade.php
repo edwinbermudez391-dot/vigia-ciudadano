@@ -6,6 +6,7 @@
     <title>Vigía Ciudadano — Control social de la obra pública</title>
     <meta name="description" content="Plataforma municipal de veeduría ciudadana: reporta baches y obras públicas con trazabilidad total — radicación, reparación e inspección de calidad ante los ojos de la ciudad.">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="icon" type="image/png" href="{{ asset('imagenes/logo-vigia.png') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -22,14 +23,8 @@
     <header class="sticky top-0 z-40 border-b border-emerald-100 bg-white/85 backdrop-blur-md">
         <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
             <a href="{{ route('home') }}" class="flex items-center gap-2.5">
-                <span class="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white shadow-md shadow-emerald-600/25">
-                    {{-- Escudo con ojo vigilante --}}
-                    <svg viewBox="0 0 24 24" fill="none" class="size-6" aria-hidden="true">
-                        <path d="M12 2 4 5v6.2c0 4.9 3.4 8.6 8 10.8 4.6-2.2 8-5.9 8-10.8V5l-8-3Z" fill="currentColor" opacity=".22"/>
-                        <path d="M12 2 4 5v6.2c0 4.9 3.4 8.6 8 10.8 4.6-2.2 8-5.9 8-10.8V5l-8-3Z" stroke="currentColor" stroke-width="1.4"/>
-                        <path d="M7.8 11.6c1.1-1.7 2.7-2.6 4.2-2.6s3.1.9 4.2 2.6c-1.1 1.7-2.7 2.6-4.2 2.6s-3.1-.9-4.2-2.6Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
-                        <circle cx="12" cy="11.6" r="1.15" fill="currentColor"/>
-                    </svg>
+                <span class="grid size-10 shrink-0 place-items-center rounded-xl bg-white shadow-md shadow-emerald-600/25 overflow-hidden">
+                    <img src="{{ asset('imagenes/logo-vigia.png') }}" alt="Logo Vigía Ciudadano" class="h-full w-auto object-contain">
                 </span>
                 <span class="leading-tight">
                     <span class="block text-sm font-semibold tracking-wide text-slate-900">Vigía Ciudadano</span>
@@ -501,11 +496,8 @@
         <div class="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:grid-cols-2 lg:grid-cols-4">
             <div>
                 <div class="flex items-center gap-2.5">
-                    <span class="grid size-9 place-items-center rounded-xl bg-emerald-500/20 text-emerald-300">
-                        <svg viewBox="0 0 24 24" fill="none" class="size-5" aria-hidden="true">
-                            <path d="M12 2 4 5v6.2c0 4.9 3.4 8.6 8 10.8 4.6-2.2 8-5.9 8-10.8V5l-8-3Z" stroke="currentColor" stroke-width="1.4"/>
-                            <circle cx="12" cy="11" r="2.4" fill="currentColor"/>
-                        </svg>
+                    <span class="grid size-9 place-items-center rounded-xl bg-white/10 overflow-hidden">
+                        <img src="{{ asset('imagenes/logo-vigia.png') }}" alt="Logo Vigía Ciudadano" class="h-full w-auto object-contain">
                     </span>
                     <span class="text-sm font-semibold text-white">Vigía Ciudadano</span>
                 </div>

@@ -3,7 +3,7 @@
 @section('title', 'Analítica Ejecutiva — Vigía Ciudadano')
 
 @section('content')
-<div class="space-y-8">
+<div class="space-y-8 pt-4">
     {{-- Header --}}
     <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -108,7 +108,9 @@
             <h2 class="mb-4 text-sm font-bold uppercase tracking-wider text-[#1f5142]">
                 Distribución por Categoría
             </h2>
-            <canvas id="categoryChart" height="200"></canvas>
+            <div class="relative w-full h-72">
+                <canvas id="categoryChart"></canvas>
+            </div>
         </div>
 
         {{-- Distribución por Departamento --}}
@@ -116,7 +118,9 @@
             <h2 class="mb-4 text-sm font-bold uppercase tracking-wider text-[#1f5142]">
                 Distribución por Departamento
             </h2>
-            <canvas id="departmentChart" height="200"></canvas>
+            <div class="relative w-full h-72">
+                <canvas id="departmentChart"></canvas>
+            </div>
         </div>
     </section>
 
@@ -125,7 +129,9 @@
         <h2 class="mb-4 text-sm font-bold uppercase tracking-wider text-[#1f5142]">
             Evolución Semanal: Reportes Recibidos vs Resueltos
         </h2>
-        <canvas id="trendChart" height="100"></canvas>
+        <div class="relative w-full h-72">
+            <canvas id="trendChart"></canvas>
+        </div>
     </section>
 
     {{-- Rendimiento de Contratistas --}}

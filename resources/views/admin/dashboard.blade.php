@@ -19,8 +19,8 @@
 
 <div class="space-y-8">
     <header>
-        <h1 class="text-2xl font-semibold tracking-tight text-[#062e24]">Pulso del municipio</h1>
-        <p class="mt-1 text-sm text-[#1f5142]">
+        <h1 class="text-2xl font-semibold tracking-tight text-text-primary">Pulso del municipio</h1>
+        <p class="mt-1 text-sm text-text-secondary">
             Estado operativo del ciclo de incidencias urbanas.
         </p>
     </header>
@@ -38,12 +38,12 @@
     </section>
 
     <div class="grid gap-6 lg:grid-cols-3">
-        <section class="bg-white/95 rounded-2xl border border-[#d5e8e0] shadow-[0_8px_30px_rgba(6,46,36,0.04)] p-6 lg:col-span-2">
-            <h2 class="mb-4 text-sm font-bold uppercase tracking-wider text-[#1f5142]">
+        <section class="bg-white/95 rounded-2xl border border-border shadow-[0_8px_30px_rgba(11,37,69,0.04)] p-6 lg:col-span-2">
+            <h2 class="mb-4 text-sm font-bold uppercase tracking-wider text-text-primary">
                 Últimas incidencias
             </h2>
 
-            <ul class="divide-y divide-[#d5e8e0]">
+            <ul class="divide-y divide-border">
                 @foreach ($recent as $report)
                     @php
                         // El despacho solo aplica a radicados nuevos o retrabajos
@@ -56,10 +56,10 @@
                     <li class="flex items-center justify-between gap-3 py-3">
                         <div class="min-w-0">
                             <a href="{{ route('reports.show', $report->ticket_code) }}"
-                               class="block truncate text-sm font-medium text-[#062e24] hover:text-[#087b5f]">
+                               class="block truncate text-sm font-medium text-text-primary hover:text-primary">
                                 {{ $report->title }}
                             </a>
-                            <p class="mt-0.5 font-mono text-[11px] text-[#5d7d70]">
+                            <p class="mt-0.5 font-mono text-[11px] text-text-secondary">
                                 {{ $report->ticket_code }} · {{ $report->category->name ?? '—' }}
                             </p>
                         </div>
@@ -70,7 +70,7 @@
                                         data-report-id="{{ $report->id }}"
                                         data-action="{{ route('admin.assign', $report) }}"
                                         data-label="{{ $report->ticket_code }} — {{ $report->title }}"
-                                        class="bg-white hover:bg-[#f0faf5] text-[#062e24] border border-[#d5e8e0] font-semibold px-4 py-2.5 rounded-xl transition text-xs">
+                                        class="bg-white hover:bg-primary/5 text-text-primary border border-border font-semibold px-4 py-2.5 rounded-xl transition text-xs">
                                     👷 Asignar
                                 </button>
                             @endif
@@ -81,18 +81,18 @@
         </section>
 
         <section class="space-y-6">
-            <div class="bg-white/95 rounded-2xl border border-[#d5e8e0] shadow-[0_8px_30px_rgba(6,46,36,0.04)] p-6">
-                <h2 class="text-sm font-bold uppercase tracking-wider text-[#1f5142]">
+            <div class="bg-white/95 rounded-2xl border border-border shadow-[0_8px_30px_rgba(11,37,69,0.04)] p-6">
+                <h2 class="text-sm font-bold uppercase tracking-wider text-text-primary">
                     Calidad de la obra
                 </h2>
                 <div class="mt-4 flex items-end gap-2">
-                    <span class="text-4xl font-bold text-[#087b5f]">{{ $quality }}%</span>
-                    <span class="pb-1 text-xs text-[#5d7d70]">dictámenes aprobados</span>
+                    <span class="text-4xl font-bold text-primary">{{ $quality }}%</span>
+                    <span class="pb-1 text-xs text-text-secondary">dictámenes aprobados</span>
                 </div>
-                <div class="mt-4 h-2 overflow-hidden rounded-full bg-[#d5e8e0]">
-                    <div class="h-full rounded-full bg-gradient-to-r from-[#087b5f] to-[#05664e]" style="width: {{ $quality }}%"></div>
+                <div class="mt-4 h-2 overflow-hidden rounded-full bg-border">
+                    <div class="h-full rounded-full bg-gradient-to-r from-primary to-secondary" style="width: {{ $quality }}%"></div>
                 </div>
-                <p class="mt-3 text-xs text-[#5d7d70]">
+                <p class="mt-3 text-xs text-text-secondary">
                     {{ $dictamenes['total'] }} inspecciones · {{ $dictamenes['rework'] }} reprocesos exigidos
                 </p>
             </div>
