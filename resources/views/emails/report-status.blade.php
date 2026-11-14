@@ -6,6 +6,8 @@
     <title>Actualización del reporte {{ $ticketCode }}</title>
     <style>
         body {
+            font-size: 18px;
+            overflow-wrap: anywhere;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             line-height: 1.6;
             color: #1e293b;
@@ -42,7 +44,7 @@
             padding: 8px 20px;
             border-radius: 9999px;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 16px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
@@ -115,8 +117,8 @@
             border-top: 1px solid #e2e8f0;
             padding: 24px;
             text-align: center;
-            font-size: 13px;
-            color: #64748b;
+            font-size: 16px;
+            color: #475569;
         }
         .footer p {
             margin: 4px 0;

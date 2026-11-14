@@ -5,22 +5,16 @@
 @section('content')
 <div class="space-y-8 pt-4">
     {{-- Header --}}
-    <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <h1 class="text-2xl font-semibold tracking-tight text-[#062e24]">Analítica Ejecutiva</h1>
-            <p class="mt-1 text-sm text-[#1f5142]">
-                Métricas de desempeño y cumplimiento operativo del municipio.
-            </p>
-        </div>
-
+    <x-page-heading title="Estadísticas del municipio" description="Resultados, tiempos de solución y plazos." />
+    <section class="panel" aria-label="Filtros de estadísticas">
         {{-- Filtros --}}
-        <form method="GET" action="{{ route('admin.analytics') }}" class="flex flex-wrap gap-3">
+        <form method="GET" action="{{ route('admin.analytics') }}" class="filter-form">
             {{-- Período --}}
             <div>
                 <label for="period" class="block text-xs font-medium text-[#5d7d70] mb-1">Período</label>
-                <select name="period" id="period" onchange="this.form.submit()"
+                <select name="period" id="period"
                         class="rounded-xl border border-[#b9daca] bg-[#fcfdfd] px-3 py-2 text-sm text-[#062e24] outline-none transition focus:border-[#087b5f] focus:ring-2 focus:ring-[#087b5f]/20">
-                    <option value="week" {{ $period === 'week' ? 'selected' : '' }}>Últimos 7 días</option>
+                    <option value="week" {{ $period === 'week' ? 'selected' : '' }}>Esta semana</option>
                     <option value="month" {{ $period === 'month' ? 'selected' : '' }}>Este mes</option>
                     <option value="year" {{ $period === 'year' ? 'selected' : '' }}>Este año</option>
                 </select>
@@ -29,7 +23,7 @@
             {{-- Departamento --}}
             <div>
                 <label for="department_id" class="block text-xs font-medium text-[#5d7d70] mb-1">Departamento</label>
-                <select name="department_id" id="department_id" onchange="this.form.submit()"
+                <select name="department_id" id="department_id"
                         class="rounded-xl border border-[#b9daca] bg-[#fcfdfd] px-3 py-2 text-sm text-[#062e24] outline-none transition focus:border-[#087b5f] focus:ring-2 focus:ring-[#087b5f]/20">
                     <option value="">Todos los departamentos</option>
                     @foreach($departments as $dept)
@@ -39,15 +33,16 @@
                     @endforeach
                 </select>
             </div>
+            <x-button type="submit" class="self-end">Aplicar filtros</x-button>
         </form>
-    </header>
+    </section>
 
     {{-- KPIs Principales --}}
-    <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <section class="analytics-stats stats-grid" aria-label="Indicadores del período seleccionado">
         {{-- Total Reportes --}}
         <div class="rounded-2xl border border-[#d5e8e0] bg-white p-5 shadow-sm transition hover:shadow-md">
             <div class="flex items-center justify-between">
-                <span class="text-3xl">📊</span>
+                <x-icon name="report" />
                 @if($kpis['variation'] > 0)
                     <span class="text-xs font-bold text-emerald-600">+{{ $kpis['variation'] }}%</span>
                 @elseif($kpis['variation'] < 0)
@@ -64,7 +59,7 @@
         {{-- Tiempo Promedio Resolución --}}
         <div class="rounded-2xl border border-[#d5e8e0] bg-white p-5 shadow-sm transition hover:shadow-md">
             <div class="flex items-center justify-between">
-                <span class="text-3xl">⏱️</span>
+                <x-icon name="clock" />
                 <span class="text-xs font-bold text-sky-600">horas</span>
             </div>
             <p class="mt-3 text-3xl font-bold tabular-nums text-[#062e24]">{{ $kpis['avg_resolution_hours'] }}</p>
@@ -75,18 +70,18 @@
         {{-- Tasa de Aprobación --}}
         <div class="rounded-2xl border border-[#d5e8e0] bg-white p-5 shadow-sm transition hover:shadow-md">
             <div class="flex items-center justify-between">
-                <span class="text-3xl">✅</span>
-                <span class="text-xs font-bold text-emerald-600">primer intento</span>
+                <x-icon name="check" />
+                <span class="text-xs font-bold text-emerald-600">inspecciones</span>
             </div>
             <p class="mt-3 text-3xl font-bold tabular-nums text-[#062e24]">{{ $kpis['approval_rate'] }}%</p>
             <p class="mt-1 text-xs font-medium text-[#5d7d70]">Tasa de aprobación</p>
-            <p class="mt-0.5 text-[10px] text-[#5d7d70]">inspecciones aprobadas sin retrabajo</p>
+            <p class="mt-0.5 text-[10px] text-[#5d7d70]">proporción de inspecciones aprobadas</p>
         </div>
 
         {{-- Cumplimiento SLA --}}
         <div class="rounded-2xl border border-[#d5e8e0] bg-white p-5 shadow-sm transition hover:shadow-md">
             <div class="flex items-center justify-between">
-                <span class="text-3xl">🎯</span>
+                <x-icon name="shield" />
                 @if($kpis['sla_compliance'] >= 80)
                     <span class="text-xs font-bold text-emerald-600">Óptimo</span>
                 @elseif($kpis['sla_compliance'] >= 60)
@@ -96,30 +91,30 @@
                 @endif
             </div>
             <p class="mt-3 text-3xl font-bold tabular-nums text-[#062e24]">{{ $kpis['sla_compliance'] }}%</p>
-            <p class="mt-1 text-xs font-medium text-[#5d7d70]">Cumplimiento de SLA</p>
+            <p class="mt-1 text-xs font-medium text-[#5d7d70]">Atención dentro del plazo</p>
             <p class="mt-0.5 text-[10px] text-[#5d7d70]">reportes resueltos dentro del plazo</p>
         </div>
     </section>
 
     {{-- Gráficos --}}
-    <section class="grid gap-6 lg:grid-cols-2">
+    <section class="charts-grid">
         {{-- Distribución por Categoría --}}
         <div class="rounded-2xl border border-[#d5e8e0] bg-white p-6 shadow-sm">
             <h2 class="mb-4 text-sm font-bold uppercase tracking-wider text-[#1f5142]">
-                Distribución por Categoría
+                Por categoría
             </h2>
-            <div class="relative w-full h-72">
-                <canvas id="categoryChart"></canvas>
+            <div class="chart-frame">
+                <canvas id="categoryChart" role="img" aria-label="Reportes por categoría. Los valores están disponibles en la tabla de datos siguiente."></canvas>
             </div>
         </div>
 
         {{-- Distribución por Departamento --}}
         <div class="rounded-2xl border border-[#d5e8e0] bg-white p-6 shadow-sm">
             <h2 class="mb-4 text-sm font-bold uppercase tracking-wider text-[#1f5142]">
-                Distribución por Departamento
+                Por dependencia
             </h2>
-            <div class="relative w-full h-72">
-                <canvas id="departmentChart"></canvas>
+            <div class="chart-frame">
+                <canvas id="departmentChart" role="img" aria-label="Reportes por dependencia. Los valores están disponibles en la tabla de datos siguiente."></canvas>
             </div>
         </div>
     </section>
@@ -127,12 +122,29 @@
     {{-- Evolución Temporal --}}
     <section class="rounded-2xl border border-[#d5e8e0] bg-white p-6 shadow-sm">
         <h2 class="mb-4 text-sm font-bold uppercase tracking-wider text-[#1f5142]">
-            Evolución Semanal: Reportes Recibidos vs Resueltos
+            Recibidos y resueltos
         </h2>
-        <div class="relative w-full h-72">
-            <canvas id="trendChart"></canvas>
+        <div class="chart-frame">
+            <canvas id="trendChart" role="img" aria-label="Evolución semanal de reportes recibidos y resueltos. Consulta también los datos en tabla."></canvas>
         </div>
     </section>
+
+    <details class="panel p-6">
+        <summary class="font-semibold">Consultar los datos de las gráficas en tablas</summary>
+        <p class="report-meta mt-3">Disponibles incluso si las gráficas no cargan. La evolución muestra las últimas ocho semanas.</p>
+        <div class="grid gap-6 mt-6 lg:grid-cols-2">
+            @foreach (['by_category' => 'Reportes por categoría', 'by_department' => 'Reportes por dependencia'] as $key => $label)
+                <div class="table-scroll"><table class="w-full"><caption>{{ $label }}</caption>
+                    <thead><tr><th scope="col">Nombre</th><th scope="col">Reportes</th></tr></thead>
+                    <tbody>@forelse ($charts[$key]['labels'] as $i => $name)<tr><th scope="row">{{ $name }}</th><td>{{ $charts[$key]['data'][$i] }}</td></tr>@empty<tr><td colspan="2">No hay reportes en el período seleccionado.</td></tr>@endforelse</tbody>
+                </table></div>
+            @endforeach
+        </div>
+        <div class="table-scroll mt-6"><table class="w-full"><caption>Evolución semanal</caption>
+            <thead><tr><th scope="col">Semana</th><th scope="col">Recibidos</th><th scope="col">Resueltos</th></tr></thead>
+            <tbody>@foreach ($charts['weekly_trend']['labels'] as $i => $week)<tr><th scope="row">{{ $week }}</th><td>{{ $charts['weekly_trend']['received'][$i] }}</td><td>{{ $charts['weekly_trend']['resolved'][$i] }}</td></tr>@endforeach</tbody>
+        </table></div>
+    </details>
 
     {{-- Rendimiento de Contratistas --}}
     <section class="rounded-2xl border border-[#d5e8e0] bg-white p-6 shadow-sm">
@@ -143,25 +155,25 @@
         @if($contractorPerformance->isEmpty())
             <p class="py-8 text-center text-sm text-[#5d7d70]">No hay contratistas registrados en el período seleccionado.</p>
         @else
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
+            <div class="table-scroll">
+                <table class="reports-table w-full text-base" role="table">
                     <thead>
                         <tr class="border-b border-[#d5e8e0] text-left text-xs font-semibold uppercase tracking-wider text-[#5d7d70]">
-                            <th class="pb-3">Contratista</th>
-                            <th class="pb-3 text-center">Asignadas</th>
-                            <th class="pb-3 text-center">Completadas</th>
-                            <th class="pb-3 text-center">A Tiempo</th>
-                            <th class="pb-3 text-center">Tasa Rechazo</th>
+                            <th scope="col" class="pb-3">Contratista</th>
+                            <th scope="col" class="pb-3 text-center">Asignadas</th>
+                            <th scope="col" class="pb-3 text-center">Completadas</th>
+                            <th scope="col" class="pb-3 text-center">A tiempo</th>
+                            <th scope="col" class="pb-3 text-center">Rechazadas (%)</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-[#d5e8e0]">
                         @foreach($contractorPerformance as $contractor)
                             <tr class="hover:bg-[#f8fdfa]">
-                                <td class="py-3 font-medium text-[#062e24]">{{ $contractor['name'] }}</td>
-                                <td class="py-3 text-center tabular-nums">{{ $contractor['assigned'] }}</td>
-                                <td class="py-3 text-center tabular-nums">{{ $contractor['completed'] }}</td>
-                                <td class="py-3 text-center tabular-nums">{{ $contractor['on_time'] }}</td>
-                                <td class="py-3 text-center">
+                                <td data-label="Contratista" class="py-3 font-medium text-[#062e24]">{{ $contractor['name'] }}</td>
+                                <td data-label="Asignadas" class="py-3 tabular-nums">{{ $contractor['assigned'] }}</td>
+                                <td data-label="Completadas" class="py-3 tabular-nums">{{ $contractor['completed'] }}</td>
+                                <td data-label="A tiempo" class="py-3 tabular-nums">{{ $contractor['on_time'] }}</td>
+                                <td data-label="Rechazadas (%)" class="py-3">
                                     @if($contractor['rejection_rate'] <= 10)
                                         <span class="inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-700">
                                             {{ $contractor['rejection_rate'] }}%
@@ -192,10 +204,11 @@
 (function() {
     'use strict';
 
+    if (typeof Chart === 'undefined') return; // Las tablas siguen disponibles sin CDN.
     // Colores del tema
     const colors = {
-        primary: '#087b5f',
-        secondary: '#05664e',
+        primary: '#173d68',
+        secondary: '#225e9c',
         accent: '#0ea5e9',
         warning: '#f59e0b',
         danger: '#ef4444',
@@ -205,8 +218,9 @@
 
     // Configuración global de Chart.js
     Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    Chart.defaults.font.size = 12;
-    Chart.defaults.color = '#5d7d70';
+    Chart.defaults.font.size = 16;
+    Chart.defaults.color = '#4c6075';
+    Chart.defaults.animation = false;
 
     // Gráfico de Categorías (Dona)
     const categoryCtx = document.getElementById('categoryChart');

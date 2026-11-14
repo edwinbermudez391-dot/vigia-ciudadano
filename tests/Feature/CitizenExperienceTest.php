@@ -1,0 +1,155 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature;
+
+use App\Enums\InspectionDecision;
+use App\Enums\ReportStatus;
+use App\Enums\UserRole;
+use App\Enums\WorkOrderStatus;
+use App\Models\Category;
+use App\Models\Department;
+use App\Models\QualityInspection;
+use App\Models\Report;
+use App\Models\User;
+use App\Models\WorkOrder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Tests\TestCase;
+
+final class CitizenExperienceTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private function category(): Category
+    {
+        $department = Department::create(['name' => 'Infraestructura', 'code' => 'CIT', 'contact_email' => 'infra@example.test', 'phone' => '123']);
+
+        return Category::create(['name' => 'Baches y Malla Vial', 'department_id' => $department->id, 'sla_hours' => 72, 'description' => 'Daños en la vía.']);
+    }
+
+    private function report(): Report
+    {
+        return Report::create([
+            'ticket_code' => 'REP-2026-0001', 'category_id' => $this->category()->id,
+            'title' => 'Hueco frente al parque', 'description' => 'Hay un hueco grande que dificulta el paso.',
+            'damage_photo_url' => 'reports/test.png', 'latitude' => 3.0095, 'longitude' => -76.4849,
+            'address_reference' => 'Frente al parque', 'status' => ReportStatus::Reported,
+            'citizen_name' => 'NOMBRE_PRIVADO', 'citizen_email' => 'correo-privado@example.test', 'citizen_phone' => 'TELEFONO_PRIVADO',
+        ]);
+    }
+
+    public function test_home_prioritizes_reporting_and_inline_lookup_without_modals(): void
+    {
+        $this->get('/')->assertOk()->assertSee('Mejoremos nuestra comunidad')
+            ->assertSee('Reportar un problema')->assertSee('Consultar mi reporte')
+            ->assertSee('data-report-lookup', false)->assertSee('Buscar reporte')
+            ->assertSee('citizen-extras')->assertSee('data-text-size', false)
+            ->assertDontSee('id="ticket-modal"', false);
+    }
+
+    public function test_form_keeps_existing_categories_fields_and_non_gps_location_options(): void
+    {
+        $category = $this->category();
+        $this->get('/reportes/crear')->assertOk()
+            ->assertSee('Hueco en la calle')->assertSee('value="'.$category->id.'"', false)
+            ->assertSee('data-category-name="Baches y Malla Vial"', false)
+            ->assertSee('data-report-step="0"', false)->assertSee('data-report-step="1"', false)->assertSee('data-report-step="2"', false)
+            ->assertSee('Buscar dirección')->assertSee('Elegir el centro del mapa')
+            ->assertSee('Agregar foto')->assertSee('data-photo-camera', false)
+            ->assertSee('name="latitude"', false)->assertSee('name="longitude"', false)
+            ->assertSee('maxlength="1000"', false)
+            ->assertDontSee('category-modal-backdrop');
+    }
+
+    public function test_public_submission_creates_a_real_report_with_manual_coordinates_and_no_contact_data(): void
+    {
+        Storage::fake('public');
+        $category = $this->category();
+        $response = $this->post('/reportes', [
+            'category_id' => $category->id, 'title' => 'Hueco en el barrio',
+            'description' => 'Hay un hueco grande frente al parque del barrio.',
+            'latitude' => '3.0095', 'longitude' => '-76.4849',
+            'address_reference' => 'Frente al parque',
+            'damage_photo' => UploadedFile::fake()->createWithContent('problema.png', (string) base64_decode(
+                'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
+            )),
+        ]);
+        $response->assertSessionHasNoErrors();
+        $report = Report::sole();
+        $response->assertRedirect(route('reports.success', $report->ticket_code));
+        $this->assertNull($report->user_id);
+        $this->assertNull($report->citizen_email);
+        $this->assertSame(ReportStatus::Reported, $report->status);
+        Storage::disk('public')->assertExists($report->damage_photo_url);
+        $this->get(route('reports.success', $report->ticket_code))->assertOk()
+            ->assertSee('¡Tu reporte fue recibido!')->assertSee($report->ticket_code)
+            ->assertSee('Copiar número')->assertSee('Imprimir comprobante');
+    }
+
+    public function test_invalid_submission_preserves_values_and_does_not_claim_success(): void
+    {
+        $category = $this->category();
+        $this->from('/reportes/crear')->post('/reportes', [
+            'category_id' => $category->id, 'title' => 'Hueco frente al parque',
+            'description' => 'Hay un hueco que dificulta el paso.',
+        ])->assertRedirect('/reportes/crear')->assertSessionHasErrors(['latitude', 'longitude', 'damage_photo']);
+        $this->assertDatabaseCount('reports', 0);
+        $this->get('/reportes/crear')->assertOk()->assertSee('Revisa la información que ingresaste')
+            ->assertSee('Hueco frente al parque')->assertSee('data-field-error="damage_photo"', false)
+            ->assertDontSee('¡Tu reporte fue recibido!');
+    }
+
+    public function test_public_detail_does_not_render_names_contact_data_or_internal_notes(): void
+    {
+        $report = $this->report();
+        $contractor = User::factory()->create(['name' => 'CONTRATISTA_PRIVADO', 'role' => UserRole::Contractor]);
+        $inspector = User::factory()->create(['name' => 'INSPECTOR_PRIVADO', 'role' => UserRole::QualityInspector]);
+        $order = WorkOrder::create([
+            'report_id' => $report->id, 'contractor_id' => $contractor->id,
+            'scheduled_date' => now()->toDateString(), 'completion_date' => now(), 'status' => WorkOrderStatus::Completed,
+            'work_description' => 'NOTA_INTERNA_TRABAJO', 'solution_photo_url' => 'solution.png',
+        ]);
+        QualityInspection::create([
+            'work_order_id' => $order->id, 'inspector_id' => $inspector->id, 'decision' => InspectionDecision::Rework,
+            'rejection_reason' => 'NOTA_INTERNA_INSPECCION', 'checklist_results' => [],
+            'verification_photo_url' => 'inspection.png', 'inspector_latitude' => 3, 'inspector_longitude' => -76, 'inspected_at' => now(),
+        ]);
+        $report->update(['status' => ReportStatus::Rework]);
+        $this->get('/reportes/'.$report->ticket_code)->assertOk()
+            ->assertSee('En reparación')->assertSee('Correcciones solicitadas')->assertSee('Frente al parque')
+            ->assertDontSee('NOMBRE_PRIVADO')->assertDontSee('correo-privado@example.test')->assertDontSee('TELEFONO_PRIVADO')
+            ->assertDontSee('CONTRATISTA_PRIVADO')->assertDontSee('INSPECTOR_PRIVADO')
+            ->assertDontSee('NOTA_INTERNA_TRABAJO')->assertDontSee('NOTA_INTERNA_INSPECCION');
+    }
+
+    public function test_public_state_labels_are_presentational_and_do_not_mutate_domain_states(): void
+    {
+        $report = $this->report();
+        foreach ([ReportStatus::Reported->value => 'Recibido', ReportStatus::InProgress->value => 'En reparación',
+            ReportStatus::UnderInspection->value => 'En revisión', ReportStatus::Rework->value => 'En reparación', ReportStatus::Closed->value => 'Solucionado'] as $state => $label) {
+            $report->update(['status' => $state]);
+            $this->get('/reportes/'.$report->ticket_code)->assertOk()->assertSee($label);
+            $this->assertSame($state, $report->fresh()->status->value);
+        }
+    }
+
+    public function test_unknown_radicated_number_returns_friendly_real_404_without_confirmation(): void
+    {
+        $this->get('/reportes/REP-2026-99999')->assertNotFound()
+            ->assertSee('No encontramos ese número')->assertSee('Buscar reporte')
+            ->assertDontSee('¡Tu reporte fue recibido!');
+        $this->get('/reportes/exito/REP-2026-99999')->assertNotFound()->assertDontSee('¡Tu reporte fue recibido!');
+    }
+
+    public function test_staff_detail_keeps_its_operational_controls_without_citizen_sizing(): void
+    {
+        $report = $this->report();
+        $admin = User::factory()->create(['role' => UserRole::SuperAdmin]);
+        $this->actingAs($admin)->get('/reportes/'.$report->ticket_code)->assertOk()
+            ->assertSee('Detalle del reporte')->assertSee('data-assign-open', false)
+            ->assertDontSee('citizen-large-text')->assertDontSee('data-text-size', false);
+    }
+}

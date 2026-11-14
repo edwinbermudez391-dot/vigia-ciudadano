@@ -9,17 +9,24 @@
 @section('title', 'Auditoría ' . $report->ticket_code . ' — Vigía Ciudadano')
 
 @section('content')
-<div class="mx-auto max-w-2xl space-y-6">
+<div class="audit-page space-y-6">
+    <x-page-heading title="Revisar obra" description="Compara la evidencia, completa la lista de verificación y registra tu decisión.">
+        <x-button :href="route('inspector.queue')" variant="secondary">Volver a inspecciones</x-button>
+    </x-page-heading>
 
+    <div class="audit-workspace">
+    <form method="POST" action="{{ route('inspector.audit.store', $order->id) }}"
+          enctype="multipart/form-data" id="audit-form" class="audit-form">
+        @csrf
     {{-- Cabeza con ticket + comparativa para cotejar en campo --}}
-    <header class="bg-white/95 rounded-2xl border border-[#d5e8e0] shadow-[0_8px_30px_rgba(6,46,36,0.04)] p-6 text-[#062e24]">
+    <header class="form-section">
         <div class="flex flex-wrap items-center justify-between gap-3">
-            <div class="flex items-center gap-3">
+            <div class="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                 <a href="{{ route('reports.show', $report->ticket_code) }}"
                    class="rounded-lg bg-[#e8f8f0] px-2.5 py-1.5 font-mono text-xs font-semibold text-[#087b5f] transition hover:bg-[#d5e8e0]">
                     {{ $report->ticket_code }}
                 </a>
-                <h1 class="text-base font-semibold text-[#062e24]">{{ $report->title }}</h1>
+                <h2 class="text-base font-semibold text-[#062e24]">{{ $report->title }}</h2>
             </div>
             <x-status-badge :status="$report->status" />
         </div>
@@ -28,19 +35,9 @@
             @if ($order->completion_date) · terminada el {{ $order->completion_date->format('d/m/Y H:i') }} @endif
         </p>
 
-        <div class="mt-4 grid grid-cols-2 gap-3">
-            <figure class="overflow-hidden rounded-xl border border-[#d5e8e0]">
-                <img src="{{ $storage->url($report->damage_photo_url) }}" alt="Daño original" onerror="this.onerror=null;this.replaceWith(Object.assign(document.createElement('div'),{textContent:'Foto no disponible',className:'grid aspect-video place-items-center bg-[#f0faf5] text-xs text-[#5d7d70]'}))" class="aspect-video w-full object-cover">
-                <figcaption class="bg-[#f0faf5] px-2 py-1 text-[11px] font-medium text-[#5d7d70]">Daño reportado</figcaption>
-            </figure>
-            <figure class="overflow-hidden rounded-xl border border-[#d5e8e0]">
-                @if ($order->solution_photo_url)
-                    <img src="{{ $storage->url($order->solution_photo_url) }}" alt="Solución" onerror="this.onerror=null;this.replaceWith(Object.assign(document.createElement('div'),{textContent:'Foto no disponible',className:'grid aspect-video place-items-center bg-[#f0faf5] text-xs text-[#5d7d70]'}))" class="aspect-video w-full object-cover">
-                @else
-                    <div class="grid aspect-video place-items-center bg-[#f0faf5] text-xs text-[#5d7d70]">Sin evidencia del contratista</div>
-                @endif
-                <figcaption class="bg-[#f0faf5] px-2 py-1 text-[11px] font-medium text-[#5d7d70]">Solución entregada</figcaption>
-            </figure>
+        <div class="inspection-evidence mt-6">
+            <x-photo-card label="Daño reportado" :url="$storage->url($report->damage_photo_url)">Compara el estado inicial con la reparación.</x-photo-card>
+            <x-photo-card label="Solución entregada" :url="$order->solution_photo_url ? $storage->url($order->solution_photo_url) : null">Evidencia registrada por el contratista.</x-photo-card>
         </div>
 
         @if ($order->work_description)
@@ -51,40 +48,37 @@
     </header>
 
     {{-- =================== FORMULARIO DE AUDITORÍA =================== --}}
-    <form method="POST" action="{{ route('inspector.audit.store', $order->id) }}"
-          enctype="multipart/form-data" id="audit-form" class="space-y-5">
-        @csrf
 
         {{-- Checklist táctil: botones grandes (dedo en campo, con guantes) --}}
         <section class="space-y-3">
             <h2 class="text-sm font-bold uppercase tracking-wider text-[#1f5142]">
-                Checklist técnico
+                Lista de verificación técnica
             </h2>
 
             @foreach ($checklist as $itemKey => $itemLabel)
                 <div class="checklist-item flex flex-col gap-2 bg-white/95 rounded-2xl border border-[#d5e8e0] shadow-[0_8px_30px_rgba(6,46,36,0.04)] p-6 text-[#062e24] transition duration-200 sm:flex-row sm:items-center sm:justify-between"
-                     data-key="{{ $itemKey }}">
+                     data-key="{{ $itemKey }}" role="group" aria-labelledby="check-label-{{ $itemKey }}">
 
-                    <p class="text-sm font-medium leading-tight">{{ $itemLabel }}</p>
+                    <p id="check-label-{{ $itemKey }}" class="text-base font-medium leading-relaxed">{{ $itemLabel }}</p>
 
                     <input type="hidden" name="checklist_results[{{ $itemKey }}]" value="{{ $items->get($itemKey) }}" data-checklist-value>
 
-                    <div class="grid shrink-0 grid-cols-2 gap-2 sm:w-56">
-                        <button type="button" data-answer="cumple"
+                    <div class="checklist-options">
+                        <button type="button" data-answer="cumple" aria-pressed="{{ $items->get($itemKey) === 'cumple' ? 'true' : 'false' }}"
                                 @class([
                                     'rounded-xl border px-4 py-4 text-sm font-bold uppercase tracking-wide transition duration-200 active:scale-[0.98]',
                                     'border-emerald-500 bg-emerald-500 text-white shadow-lg shadow-emerald-500/25' => $items->get($itemKey) === 'cumple',
                                     'border-[#b9daca] bg-[#fcfdfd] text-[#5d7d70] hover:border-emerald-300 hover:text-emerald-600' => $items->get($itemKey) !== 'cumple',
                                 ])>
-                            ✓ Cumple
+                            Cumple
                         </button>
-                        <button type="button" data-answer="no_cumple"
+                        <button type="button" data-answer="no_cumple" aria-pressed="{{ $items->get($itemKey) === 'no_cumple' ? 'true' : 'false' }}"
                                 @class([
                                     'rounded-xl border px-4 py-4 text-sm font-bold uppercase tracking-wide transition duration-200 active:scale-[0.98]',
                                     'border-rose-500 bg-rose-500 text-white shadow-lg shadow-rose-500/25' => $items->get($itemKey) === 'no_cumple',
                                     'border-[#b9daca] bg-[#fcfdfd] text-[#5d7d70] hover:border-rose-300 hover:text-rose-600' => $items->get($itemKey) !== 'no_cumple',
                                 ])>
-                            ✗ No cumple
+                            No cumple
                         </button>
                     </div>
                 </div>
@@ -137,12 +131,12 @@
         </section>
 
         {{-- Geolocalización del acta --}}
-        <section class="bg-white/95 rounded-2xl border border-[#d5e8e0] shadow-[0_8px_30px_rgba(6,46,36,0.04)] p-6 text-[#062e24]">
-            <div class="flex items-center justify-between gap-3">
+        <section class="audit-location bg-white/95 rounded-2xl border border-[#d5e8e0] shadow-[0_8px_30px_rgba(6,46,36,0.04)] p-6 text-[#062e24]">
+            <div class="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
                 <div>
                     <p class="text-sm font-medium text-[#062e24]">Posición GPS del inspector <span class="text-rose-500">*</span></p>
                     <p class="text-xs text-[#5d7d70]" data-gps-status>
-                        El dictamen debe firmarse en el punto de la obra (anti-inspección remota).
+                        Captura tu ubicación desde el lugar de la obra. Si el GPS no responde, escribe las coordenadas.
                     </p>
                 </div>
                 <button type="button" data-capture-gps
@@ -150,16 +144,16 @@
                     📡 Capturar GPS
                 </button>
             </div>
-            <div class="mt-3 grid grid-cols-2 gap-3">
+            <div class="mt-3 field-grid">
                 <div>
-                    <label class="mb-1 block text-[11px] text-[#5d7d70]">Latitud</label>
-                    <input name="inspector_latitude" type="number" step="0.0000001" min="-90" max="90" required
+                    <label for="inspector-latitude" class="mb-1 block text-[11px] text-[#5d7d70]">Latitud</label>
+                    <input id="inspector-latitude" name="inspector_latitude" type="number" step="0.0000001" min="-90" max="90" required
                            value="{{ old('inspector_latitude') }}" data-lat
                            class="w-full rounded-xl border border-[#b9daca] bg-[#fcfdfd] px-3 py-2 font-mono text-sm text-[#062e24] outline-none transition focus:border-[#087b5f] focus:ring-2 focus:ring-[#087b5f]/20">
                 </div>
                 <div>
-                    <label class="mb-1 block text-[11px] text-[#5d7d70]">Longitud</label>
-                    <input name="inspector_longitude" type="number" step="0.0000001" min="-180" max="180" required
+                    <label for="inspector-longitude" class="mb-1 block text-[11px] text-[#5d7d70]">Longitud</label>
+                    <input id="inspector-longitude" name="inspector_longitude" type="number" step="0.0000001" min="-180" max="180" required
                            value="{{ old('inspector_longitude') }}" data-lng
                            class="w-full rounded-xl border border-[#b9daca] bg-[#fcfdfd] px-3 py-2 font-mono text-sm text-[#062e24] outline-none transition focus:border-[#087b5f] focus:ring-2 focus:ring-[#087b5f]/20">
                 </div>
@@ -167,7 +161,7 @@
         </section>
 
         {{-- Dictamen final --}}
-        <section class="bg-white/95 rounded-2xl border border-[#d5e8e0] shadow-[0_8px_30px_rgba(6,46,36,0.04)] p-6 text-[#062e24]">
+        <section class="audit-decision bg-white/95 rounded-2xl border border-[#d5e8e0] shadow-[0_8px_30px_rgba(6,46,36,0.04)] p-6 text-[#062e24]">
             <h2 class="mb-3 text-sm font-bold uppercase tracking-wider text-[#1f5142]">
                 Emitir dictamen
             </h2>
@@ -175,19 +169,17 @@
             <input type="hidden" name="decision" value="{{ old('decision') }}" data-decision>
 
             <div class="grid gap-3 sm:grid-cols-2">
-                <button type="button" data-decide="approved"
-                        class="bg-[#087b5f] hover:bg-[#05664e] text-white font-bold px-4 py-2.5 rounded-xl shadow-sm transition active:scale-[0.98] py-5 text-base">
-                    ✅ APROBAR
-                    <span class="mt-0.5 block text-xs font-normal opacity-80">Obra conforme · cierra la incidencia</span>
-                </button>
-                <button type="button" data-decide="rework"
-                        class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2.5 rounded-xl shadow-sm transition active:scale-[0.98] py-5 text-base">
-                    🔁 REPROCESO
-                    <span class="mt-0.5 block text-xs font-normal opacity-80">Devuelve la orden al contratista</span>
-                </button>
+                <div>
+                    <button type="button" data-decide="approved" aria-describedby="approve-help" class="btn-primary w-full">Aprobar obra</button>
+                    <p id="approve-help" class="field-help">Obra conforme: cierra el reporte.</p>
+                </div>
+                <div>
+                    <button type="button" data-decide="rework" aria-describedby="rework-help" class="btn w-full bg-rose-700 text-white hover:bg-rose-800">Solicitar correcciones</button>
+                    <p id="rework-help" class="field-help">Devuelve la orden al contratista.</p>
+                </div>
             </div>
 
-            <p id="form-error" class="mt-3 hidden rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-600"></p>
+            <p id="form-error" role="alert" tabindex="-1" class="mt-3 hidden rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-600"></p>
 
             @if ($errors->any())
                 <ul class="mt-3 space-y-1 text-xs text-rose-600">
@@ -198,6 +190,7 @@
             @endif
         </section>
     </form>
+    </div>
 </div>
 @endsection
 
@@ -223,6 +216,7 @@
                         const active = b === btn;
                         const good = b.dataset.answer === 'cumple';
                         b.className = buttonClass(answer === b.dataset.answer, active, good);
+                        b.setAttribute('aria-pressed', String(active));
                     });
 
                     syncReworkPanel();
@@ -289,7 +283,7 @@
                     rework: 'Rechazar la obra y enviar a REPROCESO',
                 };
                 if (confirm('¿Confirmas el dictamen: ' + labels[btn.dataset.decide] + '?')) {
-                    form.submit();
+                    form.requestSubmit();
                 }
             });
         });
@@ -324,6 +318,7 @@
         function showError(msg) {
             errorBox.textContent = msg;
             errorBox.classList.remove('hidden');
+            errorBox.focus();
             return false;
         }
         function hideError() { errorBox.classList.add('hidden'); }

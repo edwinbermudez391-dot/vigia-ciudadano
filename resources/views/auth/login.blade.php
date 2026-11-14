@@ -9,22 +9,15 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.bunny.net/css?family=playfair-display:500,600,700" rel="stylesheet">
-    <style>
-        .font-serif { font-family: 'Playfair Display', ui-serif, Georgia, 'Times New Roman', serif; }
-        .font-sans { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
-    </style>
 </head>
 
-<body class="min-h-screen bg-white font-sans text-text-primary antialiased">
-    <div class="flex min-h-screen">
+<body class="institutional-ui login-page min-h-screen bg-white font-sans text-text-primary antialiased">
+    <a href="#login-form" class="skip-link">Saltar al formulario de acceso</a>
+    <div class="login-layout">
         
         {{-- ==================== COLUMNA IZQUIERDA: FORMULARIO ==================== --}}
-        <div class="flex w-full flex-col justify-center px-6 py-12 lg:w-[480px] lg:px-12 lg:py-0">
-            <div class="mx-auto w-full max-w-sm">
+        <main class="login-main">
+            <div class="mx-auto w-full max-w-lg">
                 
                 {{-- Logo y Marca --}}
                 <div class="mb-8">
@@ -34,15 +27,14 @@
                         </div>
                         <div>
                             <div class="text-lg font-bold tracking-tight text-text-primary">Vigía Ciudadano</div>
-                            <div class="text-xs text-text-secondary">Portal de Información</div>
                         </div>
                     </a>
                 </div>
 
                 {{-- Título Principal --}}
                 <div class="mb-8">
-                    <h1 class="text-2xl font-bold tracking-tight text-text-primary">Iniciar Sesión</h1>
-                    <p class="mt-2 text-sm text-text-secondary">Accede al sistema de gestión institucional</p>
+                    <h1 class="text-2xl font-bold tracking-tight text-text-primary">Ingresar</h1>
+                    <p class="mt-3 text-base text-text-secondary">Usa la cuenta habilitada por tu entidad.</p>
                 </div>
 
                 {{-- Flashes (status/error) --}}
@@ -62,7 +54,7 @@
                 @endif
 
                 {{-- ==================== FORMULARIO ==================== --}}
-                <form id="login-form" method="POST" action="{{ route('login.attempt') }}" class="space-y-5">
+                <form id="login-form" tabindex="-1" method="POST" action="{{ route('login.attempt') }}" class="space-y-5">
                     @csrf
 
                     {{-- Correo electrónico --}}
@@ -76,13 +68,12 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                                 </svg>
                             </div>
-                            <input id="email" name="email" type="email" value="{{ old('email') }}" required autofocus
+                            <input id="email" name="email" type="email" value="{{ old('email') }}" required autofocus aria-invalid="{{ $errors->has('email') ? 'true' : 'false' }}"
+                                   @if ($errors->has('email')) aria-describedby="email-error" @endif
                                    autocomplete="username" placeholder="tu@correo.gov.co"
                                    class="w-full rounded-full border border-border bg-slate-50 py-3 pl-11 pr-4 text-sm text-text-primary placeholder:text-text-secondary outline-none transition focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20">
                         </div>
-                        @error('email')
-                            <p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>
-                        @enderror
+                        <x-field-error field="email" />
                     </div>
 
                     {{-- Contraseña --}}
@@ -96,31 +87,28 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                                 </svg>
                             </div>
-                            <input id="password" name="password" type="password" required autocomplete="current-password"
+                            <input id="password" name="password" type="password" required autocomplete="current-password" aria-invalid="{{ $errors->has('password') ? 'true' : 'false' }}"
+                                   @if ($errors->has('password')) aria-describedby="password-error" @endif
                                    placeholder="••••••••••"
                                    class="w-full rounded-full border border-border bg-slate-50 py-3 pl-11 pr-4 text-sm text-text-primary placeholder:text-text-secondary outline-none transition focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20">
                         </div>
-                        @error('password')
-                            <p class="mt-2 text-xs font-medium text-rose-600">{{ $message }}</p>
-                        @enderror
+                        <x-field-error field="password" />
                     </div>
 
                     {{-- Recordar sesión y Recuperar contraseña --}}
-                    <div class="flex items-center justify-between">
+                    <div class="space-y-3">
                         <label class="flex cursor-pointer items-center gap-2">
                             <input type="checkbox" name="remember" value="1"
                                    class="h-4 w-4 rounded border-border bg-white text-primary transition focus:ring-2 focus:ring-primary/20">
                             <span class="text-sm text-text-secondary">Recordarme</span>
                         </label>
-                        <a href="#" class="text-sm font-medium text-primary hover:text-secondary transition">
-                            ¿Olvidaste tu contraseña?
-                        </a>
+                        <p class="text-sm text-text-secondary">Si olvidaste tu contraseña, solicita ayuda al administrador de tu entidad.</p>
                     </div>
 
                     {{-- Botón principal --}}
                     <button type="submit"
-                            class="w-full rounded-full bg-amber-400 py-3.5 text-sm font-bold tracking-wide text-text-primary shadow-md transition duration-200 hover:bg-amber-300 hover:shadow-lg active:scale-[0.99]">
-                        Entrar al Sistema
+                             class="btn-primary w-full">
+                        Ingresar
                     </button>
                 </form>
 
@@ -130,7 +118,7 @@
                         <p class="mb-3 text-center text-[10px] font-semibold tracking-widest text-text-secondary uppercase">
                             Ambiente de pruebas · password
                         </p>
-                        <div class="grid grid-cols-3 gap-2">
+                        <div class="login-demo-actions">
                             <button type="button" data-quick-login="admin@vigia.gov.co"
                                     class="flex items-center justify-center gap-1.5 rounded-full border border-border bg-background px-2 py-2 text-[11px] font-semibold text-text-primary transition hover:bg-primary/5 hover:border-primary active:scale-[0.98]">
                                 <span class="size-1.5 rounded-full bg-secondary"></span> Alcaldía
@@ -174,14 +162,16 @@
                 </div>
 
             </div>
-        </div>
+        </main>
 
         {{-- ==================== COLUMNA DERECHA: IMAGEN HERO ==================== --}}
-        <div class="relative hidden lg:flex lg:w-1/2 lg:flex-1 overflow-hidden">
-            <img src="{{ asset('imagenes/WhatsApp Image 2026-10-16 at 11.51.55 AM.jpeg') }}" 
-                 alt="Vigía Ciudadano - Control de Obra" 
-                 class="h-full w-full object-cover object-[85%_center]">
-        </div>
+        <aside class="login-aside" aria-label="Acerca del espacio de trabajo">
+            <span class="login-seal"><x-icon name="shield" />Gestión municipal</span>
+            <h2>Una ciudad mejor atendida.</h2>
+            <p>Coordina reparaciones y verifica su calidad.</p>
+            <ul><li><x-icon name="report" />Reportes</li><li><x-icon name="work" />Órdenes de trabajo</li><li><x-icon name="check" />Inspecciones</li></ul>
+            <img src="{{ asset('imagenes/WhatsApp Image 2026-10-16 at 11.51.55 AM.jpeg') }}" alt="" class="login-photo">
+        </aside>
 
     </div>
 </body>

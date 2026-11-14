@@ -1,6 +1,7 @@
-@props(['href' => '#', 'active' => false])
+@props(['href' => '#', 'active' => false, 'icon' => null])
 
-<a href="{{ $href }}" @class([
-    'whitespace-nowrap rounded-xl px-3 py-1.5 text-sm font-medium text-text-primary transition duration-200 hover:text-primary',
-    'bg-primary/10 text-primary font-semibold' => $active,
-])>{{ $slot }}</a>
+<a href="{{ $href }}" @if ($active) aria-current="page" @endif
+   {{ $attributes->class(['nav-link', 'is-active' => $active]) }} @if ($icon) title="{{ trim(strip_tags((string) $slot)) }}" @endif>
+    @if ($icon)<x-icon :name="$icon" />@endif
+    <span class="nav-caption">{{ $slot }}</span>
+</a>

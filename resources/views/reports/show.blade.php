@@ -11,7 +11,7 @@
 
     // Semáforo de SLA: plazo contractual vs reloj actual.
     $slaHours = $report->category->sla_hours ?? null;
-    $slaDue = $slaHours ? $report->created_at->addHours($slaHours) : null;
+    $slaDue = $slaHours ? $report->created_at->copy()->addHours($slaHours) : null;
     $slaOverdue = $slaDue && $report->status !== \App\Enums\ReportStatus::Closed && $slaDue->isPast();
 
     // Panel operativo: SOLO la cuadrilla dueña de la orden lo ve (IDOR de UI;
@@ -24,8 +24,20 @@
 @section('title', $report->ticket_code.' — Vigía Ciudadano')
 
 @section('content')
-<div class="mx-auto max-w-3xl space-y-6">
+@if (!auth()->user() || !(auth()->user()->isSuperAdmin() || auth()->user()->isContractor() || auth()->user()->isInspector()))
+    @include('reports.partials.citizen-detail')
+@else
+<div class="report-detail-page space-y-6">
+    <x-page-heading title="Detalle del reporte" description="Estado, fotos e historial de atención.">
+        @if (auth()->user()?->isSuperAdmin())
+            <x-button :href="route('admin.dashboard').'#reportes'" variant="secondary">Volver a reportes</x-button>
+        @elseif (auth()->user()?->isContractor())
+            <x-button :href="route('contractor.orders')" variant="secondary">Volver a mis órdenes</x-button>
+        @endif
+    </x-page-heading>
 
+    <div class="report-detail-grid">
+    <div class="report-detail-main">
     {{-- ================= CABECERA ================= --}}
     <header class="bg-white/95 rounded-2xl border border-[#d5e8e0] shadow-[0_8px_30px_rgba(6,46,36,0.04)] p-6 text-[#062e24] transition-all hover:shadow-md">
         <div class="flex flex-wrap items-center gap-3">
@@ -39,7 +51,7 @@
                     'border-rose-200 bg-rose-50 text-rose-600' => $slaOverdue,
                     'border-[#d5e8e0] text-[#5d7d70]' => !$slaOverdue,
                 ])>
-                    {{ $slaOverdue ? '⏰ SLA vencido ('.$slaHours.'h)' : 'SLA '.$slaHours.'h · vence '.$slaDue->format('d M H:i') }}
+                    {{ $slaOverdue ? 'Plazo vencido ('.$slaHours.' horas)' : 'Plazo: '.$slaHours.' horas · vence '.$slaDue->format('d/m H:i') }}
                 </span>
             @endif
 
@@ -56,23 +68,23 @@
             @endif
         </div>
 
-        <h1 class="mt-4 text-xl font-semibold leading-snug text-[#062e24]">{{ $report->title }}</h1>
+        <h2 class="mt-4 text-xl font-semibold leading-snug text-[#062e24]">{{ $report->title }}</h2>
         <p class="mt-2 text-sm leading-relaxed text-[#1f5142]">{{ $report->description }}</p>
 
-        <dl class="mt-4 grid gap-x-6 gap-y-2 text-xs sm:grid-cols-2">
-            <div class="flex gap-2">
+        <dl class="detail-grid">
+            <div>
                 <dt class="text-[#5d7d70]">Categoría</dt>
                 <dd class="font-medium text-[#062e24]">{{ $report->category->name }}</dd>
             </div>
-            <div class="flex gap-2">
+            <div>
                 <dt class="text-[#5d7d70]">Dependencia</dt>
                 <dd class="font-medium text-[#062e24]">{{ $report->category->department->name ?? '—' }}</dd>
             </div>
-            <div class="flex gap-2">
+            <div>
                 <dt class="text-[#5d7d70]">Reportado</dt>
                 <dd class="font-medium text-[#062e24]">{{ $report->created_at->format('d/m/Y H:i') }} · {{ $report->user->name ?? '—anónimo' }}</dd>
             </div>
-            <div class="flex gap-2">
+            <div>
                 <dt class="text-[#5d7d70]">Referencia</dt>
                 <dd class="font-medium text-[#062e24]">{{ $report->address_reference ?: '—' }}</dd>
             </div>
@@ -94,9 +106,9 @@
                 <div class="flex items-center gap-3">
                     <span class="grid size-11 shrink-0 place-items-center rounded-xl bg-sky-100 text-xl">🚧</span>
                     <div>
-                        <p class="text-sm font-semibold text-[#062e24]">Orden despachada a tu cuadrilla</p>
+                        <p class="text-sm font-semibold text-[#062e24]">Trabajo asignado</p>
                         <p class="text-xs text-[#5d7d70]">
-                            Inicia la obra cuando estés en sitio: la trazabilidad registra el arranque antes de permitir cerrar.
+                            Registra el inicio al llegar al lugar. Es necesario para poder finalizar la obra.
                         </p>
                     </div>
                 </div>
@@ -108,7 +120,7 @@
                     @method('PATCH')
                     <button type="submit"
                             class="bg-[#087b5f] hover:bg-[#05664e] text-white font-bold px-4 py-2.5 rounded-xl shadow-sm transition active:scale-[0.98] whitespace-nowrap">
-                        ▶️ Iniciar Trabajo en Sitio
+                        Iniciar trabajo
                     </button>
                 </form>
             </div>
@@ -116,13 +128,13 @@
     @elseif ($crewOrder && $workOrder->status === \App\Enums\WorkOrderStatus::InExecution)
         <section class="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-5 text-[#062e24] shadow-sm">
             <h2 class="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-emerald-700">
-                ✅ Finalizar obra — evidencia obligatoria
+                Finalizar obra
             </h2>
             <p class="mt-1 text-xs text-[#5d7d70]">
-                Al enviar, la orden pasa a <b>completed</b> y la incidencia a inspección de calidad; el panel quedará bloqueado hasta el dictamen.
+                Al enviar, el trabajo queda registrado como terminado y pasa a inspección de calidad. No podrás editarlo mientras se revisa.
             </p>
 
-            <form method="POST" action="{{ route('contractor.completeWork', $workOrder) }}"
+            <form method="POST" action="{{ route('contractor.completeWork', $workOrder) }}" data-confirm="¿Confirmas que la reparación está terminada? La evidencia se enviará a inspección de calidad."
                   enctype="multipart/form-data" id="complete-work-form" class="mt-4 space-y-4">
                 @csrf
 
@@ -148,7 +160,7 @@
 
                 <div>
                     <label for="work_description" class="mb-1 block text-sm font-medium text-[#062e24]">
-                        Descripción técnica del trabajo <span class="text-rose-500">*</span>
+                        Trabajo realizado <span class="text-rose-500">*</span>
                     </label>
                     <textarea id="work_description" name="work_description" rows="4"
                               required minlength="20" maxlength="1500"
@@ -161,7 +173,7 @@
 
                 <button type="submit"
                         class="w-full bg-[#087b5f] hover:bg-[#05664e] text-white font-bold px-4 py-2.5 rounded-xl shadow-sm transition active:scale-[0.98] py-4 text-base sm:w-auto">
-                    ✅ Enviar Obra Finalizada a Inspección
+                    Enviar a inspección
                 </button>
             </form>
         </section>
@@ -172,7 +184,7 @@
         <h2 class="mb-3 text-sm font-bold uppercase tracking-wider text-[#1f5142]">
             Evidencia del ciclo completo
         </h2>
-        <div class="grid gap-4 sm:grid-cols-3">
+        <div class="evidence-grid">
             <x-photo-card label="1 · Daño" :url="$damageUrl">
                 Reportado por el ciudadano<br>
                 {{ $report->created_at->format('d/m/Y') }}
@@ -212,13 +224,15 @@
         @endif
     </section>
 
+    </div>
+    <div class="report-detail-side">
     {{-- ================= LÍNEA DE TIEMPO ================= --}}
     <section class="bg-white/95 rounded-2xl border border-[#d5e8e0] shadow-[0_8px_30px_rgba(6,46,36,0.04)] p-6 text-[#062e24] transition-all hover:shadow-md">
         <h2 class="mb-5 text-sm font-bold uppercase tracking-wider text-[#1f5142]">
             Línea de tiempo
         </h2>
 
-        <ol class="relative space-y-6 border-l border-[#d5e8e0] pl-6">
+        <ol class="report-timeline">
             @foreach ($steps as $step)
                 <li class="relative">
                     {{-- nodo --}}
@@ -272,6 +286,8 @@
         @endif
     </section>
 
+    </div>
+    </div>
     {{-- Modal de despacho reutilizado: visible solo si $assignable trajo
          cuadrillas (ReportController::show); inofensivo para el resto. --}}
     @if ($assignable)
@@ -279,6 +295,7 @@
     @endif
 </div>
 
+@endif
 @endsection
 
 @push('scripts')

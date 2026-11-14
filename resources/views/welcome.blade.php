@@ -3,177 +3,79 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Vigía Ciudadano — Control social de la obra pública</title>
-    <meta name="description" content="Plataforma municipal de veeduría ciudadana: reporta baches y obras públicas con trazabilidad total — radicación, reparación e inspección de calidad ante los ojos de la ciudad.">
+    <title>Vigía Ciudadano — Gestión ciudadana</title>
+    <meta name="description" content="Reporta problemas de tu comunidad y consulta su solución. Fácil, rápido y sin registro.">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" type="image/png" href="{{ asset('imagenes/logo-vigia.png') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-    {{-- Tipografía serif para titulares, con stack de reserva si la fuente no carga --}}
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=playfair-display:500,600,700" rel="stylesheet">
-    <style>
-        .font-display { font-family: 'Playfair Display', ui-serif, Georgia, 'Times New Roman', serif; }
-    </style>
 </head>
-<body class="min-h-screen bg-white font-sans text-slate-800 antialiased">
+<body class="institutional-ui public-portal citizen-ui min-h-screen bg-white font-sans text-slate-800 antialiased">
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
 
     {{-- ============================ HEADER ============================ --}}
-    <header class="sticky top-0 z-40 border-b border-emerald-100 bg-white/85 backdrop-blur-md">
-        <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-            <a href="{{ route('home') }}" class="flex items-center gap-2.5">
-                <span class="grid size-10 shrink-0 place-items-center rounded-xl bg-white shadow-md shadow-emerald-600/25 overflow-hidden">
-                    <img src="{{ asset('imagenes/logo-vigia.png') }}" alt="Logo Vigía Ciudadano" class="h-full w-auto object-contain">
-                </span>
-                <span class="leading-tight">
-                    <span class="block text-sm font-semibold tracking-wide text-slate-900">Vigía Ciudadano</span>
-                    <span class="block text-xs text-emerald-700">Control de obra pública</span>
-                </span>
+    <header class="app-header">
+        <div class="app-header-inner">
+            <a href="{{ route('home') }}" class="brand">
+                <img src="{{ asset('imagenes/logo-vigia.png') }}" alt="" width="40" height="40">
+                <strong>Vigía Ciudadano</strong>
             </a>
-
-            <nav class="hidden items-center gap-1 text-sm font-medium text-slate-600 lg:flex" aria-label="Navegación rápida">
-                <a href="#como-funciona" class="rounded-lg px-3 py-2 transition duration-200 hover:bg-emerald-50 hover:text-emerald-800">Cómo funciona</a>
-                <a href="#transparencia" class="rounded-lg px-3 py-2 transition duration-200 hover:bg-emerald-50 hover:text-emerald-800">Transparencia</a>
-                <a href="#metricas" class="rounded-lg px-3 py-2 transition duration-200 hover:bg-emerald-50 hover:text-emerald-800">Métricas</a>
-                <a href="#participa" class="rounded-lg px-3 py-2 transition duration-200 hover:bg-emerald-50 hover:text-emerald-800">Participa</a>
-                <a href="{{ route('map') }}" class="rounded-lg px-3 py-2 transition duration-200 hover:bg-emerald-50 hover:text-emerald-800">🗺️ Mapa</a>
-            </nav>
-
-            <div class="flex items-center gap-2">
-                <a href="{{ route('reports.create') }}"
-                   class="hidden rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition duration-200 hover:bg-emerald-700 active:scale-[0.98] sm:inline-flex">
-                    Radicar Reporte
-                </a>
-            </div>
+            <x-public-navigation />
         </div>
     </header>
 
     {{-- ============================ HERO ============================ --}}
-    <section class="relative overflow-hidden">
-        {{-- Manchas suaves estilo Canva --}}
-        <div class="pointer-events-none absolute -left-24 -top-24 size-96 rounded-full bg-emerald-100/70 blur-3xl" aria-hidden="true"></div>
-        <div class="pointer-events-none absolute -right-16 top-1/3 size-80 rounded-full bg-sky-100/70 blur-3xl" aria-hidden="true"></div>
-        <div class="pointer-events-none absolute bottom-0 left-1/3 size-72 rounded-full bg-violet-100/60 blur-3xl" aria-hidden="true"></div>
+    <main id="main-content" tabindex="-1">
+    <div class="public-section-inner"><x-citizen-tools /></div>
+    <section class="public-hero">
 
-        <div class="relative mx-auto grid max-w-6xl items-center gap-14 px-4 py-14 lg:grid-cols-2 lg:py-20">
+        <div class="hero-layout">
             {{-- Columna de mensaje --}}
             <div>
-                <p class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">
-                    Control social&nbsp;•&nbsp;Obras públicas&nbsp;•&nbsp;Transparencia
-                </p>
+                <p class="eyebrow">Sin registro</p>
 
-                <h1 class="font-display mt-6 text-4xl font-semibold leading-[1.15] text-slate-900 sm:text-5xl">
-                    Vigía Ciudadano: <span class="text-emerald-700">cada bache, cada obra,</span> bajo la lupa de la ciudad
+                <h1 class="hero-title font-semibold text-slate-900">
+                    Mejoremos nuestra comunidad
                 </h1>
 
-                <p class="mt-5 max-w-xl text-base leading-relaxed text-slate-600">
-                    Reporta el deterioro de tu barrio con foto y ubicación exactas, sigue el despacho de la cuadrilla,
-                    la reparación en sitio y la inspección de calidad final. Todo el ciclo, con evidencia pública y
-                    trazabilidad verificable desde el minuto uno.
+                <p class="mt-4 max-w-xl text-slate-600">
+                    Reporta daños en tu barrio y consulta cómo va su solución.
                 </p>
 
-                <div class="mt-8 flex flex-wrap items-center gap-3">
+                <div class="hero-actions">
                     <a href="{{ route('reports.create') }}"
-                       class="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition duration-200 hover:bg-emerald-700 active:scale-[0.98]">
-                        Radicar Reporte
+                       class="btn-primary">
+                        <x-icon name="camera" />Reportar un problema
                     </a>
-                    <button type="button" data-open-ticket-modal
-                            class="rounded-xl border border-emerald-200 bg-white px-5 py-2.5 text-sm font-semibold text-emerald-700 shadow-sm transition duration-200 hover:bg-emerald-50">
-                        🔎 Consultar Incidencia
-                    </button>
+                    <a href="#consultar" class="btn-secondary" data-focus-lookup><x-icon name="search" />Consultar mi reporte</a>
                 </div>
 
-                <p class="mt-5 text-xs text-slate-500">
-                    ingresa tu ticket <code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-emerald-700">REP-AAAA-NNNN</code> para ver su trazabilidad completa.
-                </p>
             </div>
 
-            {{-- Mockup visual: mapa con pin + tarjeta móvil flotante --}}
-            <div class="relative mx-auto w-full max-w-sm lg:mr-0 lg:ml-auto" aria-hidden="true">
-                <div class="relative aspect-[4/5] overflow-hidden rounded-[2rem] border border-emerald-100 bg-emerald-50/70 shadow-xl shadow-emerald-900/10">
-                    {{-- Callecitas del mapa --}}
-                    <svg viewBox="0 0 400 500" class="absolute inset-0 h-full w-full">
-                        <rect width="400" height="500" fill="#ecfdf5"/>
-                        <g opacity=".65">
-                            <rect x="18" y="22" width="150" height="112" rx="14" fill="#a7f3d0"/>
-                            <rect x="212" y="22" width="170" height="112" rx="14" fill="#99f6e4"/>
-                            <rect x="18" y="208" width="150" height="132" rx="14" fill="#99f6e4"/>
-                            <rect x="212" y="208" width="170" height="132" rx="14" fill="#a7f3d0"/>
-                            <rect x="18" y="408" width="364" height="76" rx="14" fill="#a7f3d0"/>
-                        </g>
-                        <path d="M0 182h400M0 378h400M195 0v500" stroke="#ffffff" stroke-width="26" stroke-linecap="round"/>
-                        <path d="M0 182h400M0 378h400M195 0v500" stroke="#d1fae5" stroke-width="2"/>
-                        <path d="M60 182v28M330 378v28" stroke="#fbbf24" stroke-width="6" stroke-linecap="round"/>
-                        <circle cx="96" cy="60" r="7" fill="#ffffff" opacity=".8"/>
-                        <circle cx="300" cy="300" r="7" fill="#ffffff" opacity=".8"/>
-                    </svg>
-
-                    {{-- Chip superior: monitoreo en vivo --}}
-                    <span class="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full bg-white/90 px-3 py-1.5 text-[11px] font-semibold text-emerald-800 shadow-sm ring-1 ring-emerald-100">
-                        <span class="relative flex size-2">
-                            <span class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-                            <span class="relative inline-flex size-2 rounded-full bg-emerald-500"></span>
-                        </span>
-                        Monitoreo en vivo
-                    </span>
-
-                    {{-- Pin con onda expansiva --}}
-                    <div class="absolute left-1/2 top-[44%] -translate-x-1/2 -translate-y-1/2">
-                        <span class="absolute left-1/2 top-1/2 size-20 -translate-x-1/2 -translate-y-1/2 animate-ping rounded-full bg-emerald-400/30"></span>
-                        <span class="absolute left-1/2 top-1/2 size-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-500/25"></span>
-                        <svg viewBox="0 0 24 24" class="relative size-11 drop-shadow-md">
-                            <path d="M12 2c-4.4 0-8 3.6-8 8 0 5.4 8 13 8 13s8-7.6 8-13c0-4.4-3.6-8-8-8Z" fill="#059669"/>
-                            <circle cx="12" cy="10" r="3.2" fill="#ecfdf5"/>
-                        </svg>
-                    </div>
-                    <span class="absolute left-1/2 top-[54%] -translate-x-1/2 whitespace-nowrap rounded-full bg-slate-900/85 px-3 py-1 text-[11px] font-medium text-white shadow">
-                        Bache reportado · hace 2 h
-                    </span>
-
-                    {{-- Dirección en el pie del mapa --}}
-                    <span class="absolute bottom-4 left-4 right-4 flex items-center justify-between rounded-xl bg-white/90 px-3 py-2 text-[11px] font-medium text-slate-600 shadow-sm ring-1 ring-emerald-100">
-                        <span>📍 Cra 5 #28-14 · Centro</span>
-                        <span class="text-emerald-700">radio 500 m</span>
-                    </span>
-                </div>
-
-                {{-- Tarjeta móvil flotante: caso de ejemplo --}}
-                <div class="absolute -bottom-8 left-2 w-64 rounded-2xl bg-white p-4 shadow-2xl shadow-emerald-950/25 ring-1 ring-emerald-100 sm:-left-8">
-                    <div class="flex items-start justify-between gap-2">
-                        <div>
-                            <p class="font-mono text-[10px] text-slate-400">REP-2026-0148</p>
-                            <p class="mt-0.5 text-sm font-semibold leading-snug text-slate-800">Bache con filtración en la calzada</p>
-                        </div>
-                        {{-- Badge fiel a StatusUi::UnderInspection (violeta) --}}
-                        <span class="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-[10px] font-medium text-indigo-700">En inspección</span>
-                    </div>
-
-                    {{-- Barra de progreso del ciclo --}}
-                    <div class="mt-4">
-                        <div class="relative h-1.5 rounded-full bg-emerald-100">
-                            <div class="absolute inset-y-0 left-0 w-3/4 rounded-full bg-gradient-to-r from-emerald-500 to-teal-400"></div>
-                        </div>
-                        <div class="mt-2 flex justify-between text-[9px] font-medium text-slate-400">
-                            <span class="text-emerald-600">Reportado</span>
-                            <span class="text-emerald-600">Ejecución</span>
-                            <span class="text-violet-600">Inspección</span>
-                            <span>Cerrado</span>
-                        </div>
-                        <p class="mt-2 text-[11px] text-slate-500">Paso 3 de 4 · <b class="font-semibold text-slate-700">auditoría técnica en curso</b></p>
-                    </div>
-                </div>
-            </div>
+            <aside class="public-service-card" aria-label="Antes de enviar tu reporte">
+                <h2>Reportar es sencillo</h2>
+                <ol class="report-steps">
+                    <li><span class="step-icon"><x-icon name="report" /></span><div><strong>1. Problema</strong><p>Elige qué pasó.</p></div></li>
+                    <li><span class="step-icon"><x-icon name="map" /></span><div><strong>2. Ubicación</strong><p>Indica dónde ocurre.</p></div></li>
+                    <li><span class="step-icon"><x-icon name="camera" /></span><div><strong>3. Foto y detalles</strong><p>Envía y guarda tu número.</p></div></li>
+                </ol>
+                <p class="citizen-help">Te guiamos paso a paso. Guarda el número al terminar.</p>
+            </aside>
         </div>
     </section>
 
+    <div class="public-section-inner citizen-home-lookup"><x-report-lookup /></div>
+    <div class="public-section-inner">
+    <details class="citizen-extras">
+        <summary>Ver el mapa, cómo funciona y los resultados</summary>
+        <div>
     {{-- ============================ MAPA INTERACTIVO ============================ --}}
-    <section class="border-y border-emerald-100 bg-white py-14 lg:py-16">
-        <div class="mx-auto max-w-6xl px-4">
+    <section class="public-section border-y border-emerald-100 bg-white">
+        <div class="public-section-inner">
             <div class="max-w-2xl">
-                <p class="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-600">Mapa en vivo</p>
-                <h2 class="font-display mt-3 text-3xl font-semibold text-slate-900 sm:text-4xl">Incidencias georreferenciadas</h2>
-                <p class="mt-4 text-slate-600">Explora en tiempo real los reportes ciudadanos activos en el municipio. Cada punto es una incidencia verificable con trazabilidad pública.</p>
+                <h2 class="font-semibold text-slate-900">Reportes en tu comunidad</h2>
+                <p class="mt-2 text-slate-600">Selecciona un punto para ver el reporte.</p>
             </div>
 
             {{-- Contenedor del mapa embebido --}}
@@ -183,11 +85,11 @@
                 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
                 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
 
-                <div id="landing-map" style="height: 420px; width: 100%; z-index: 1;" role="application" aria-label="Mapa de incidencias activas"></div>
+                <div id="landing-map" role="region" aria-label="Mapa de reportes activos"></div>
 
                 {{-- Stats flotante --}}
                 <div class="absolute top-3 left-14 z-[1000] rounded-xl bg-white px-4 py-2 text-sm font-semibold text-[#062e24] shadow-md">
-                    📍 <span id="landing-map-count" class="text-emerald-700">0</span> incidencias activas
+                    <span id="landing-map-count" class="text-emerald-700">0</span> reportes activos
                 </div>
 
                 {{-- Leyenda de colores --}}
@@ -201,7 +103,7 @@
             </div>
 
             <div class="mt-4 flex items-center justify-between">
-                <p class="text-xs text-slate-500">Datos actualizados en tiempo real · Fuentes: expediente público de la plataforma</p>
+                <p class="text-sm text-slate-600">Fuente: reportes de la plataforma.</p>
                 <a href="{{ route('map') }}" class="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700">
                     Ver mapa completo →
                 </a>
@@ -210,24 +112,23 @@
     </section>
 
     {{-- ====================== ¿CÓMO FUNCIONA? (4 pasos) ====================== --}}
-    <section id="como-funciona" class="scroll-mt-24 border-y border-emerald-100 bg-emerald-50/40 py-16 lg:py-20">
-        <div class="mx-auto max-w-6xl px-4">
+    <section id="como-funciona" class="public-section scroll-mt-24 border-y border-emerald-100 bg-emerald-50/40">
+        <div class="public-section-inner">
             <div class="max-w-2xl">
-                <p class="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-600">¿Cómo funciona?</p>
-                <h2 class="font-display mt-3 text-3xl font-semibold text-slate-900 sm:text-4xl">Un ciclo cerrado, cuatro estaciones visibles</h2>
-                <p class="mt-4 text-slate-600">Cada incidencia recorre el mismo camino auditado. La ciudadanía acompaña el proceso en todas sus etapas, sin cajas negras.</p>
+                <h2 class="font-semibold text-slate-900">Cómo funciona</h2>
+                <p class="mt-2 text-slate-600">Acompaña tu reporte en cada paso.</p>
             </div>
 
             <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 @foreach ([
-                    ['01', '📸', 'Reporte Ciudadano', 'Reporta el daño con foto y georreferenciación exacta. Recibes un ticket REP-AAAA-NNNN al instante.'],
-                    ['02', '🏛️', 'Asignación Municipal', 'La Alcaldía valida la incidencia y despacha la orden a una cuadrilla contratista con fecha programada.'],
-                    ['03', '🚧', 'Reparación en Sitio', 'La cuadrilla ejecuta la obra y registra la foto de solución como evidencia de cierre técnico.'],
-                    ['04', '🔍', 'Inspección de Calidad', 'Un inspector independiente audita y emite dictamen aprobado o retrabajo. La compuerta de calidad.'],
+                    ['01', 'report', 'Reporta', 'Envía una foto y la ubicación.'],
+                    ['02', 'users', 'Asignamos', 'La Alcaldía encarga la reparación.'],
+                    ['03', 'work', 'Reparamos', 'La cuadrilla registra el trabajo.'],
+                    ['04', 'check', 'Verificamos', 'Un inspector revisa la calidad.'],
                 ] as [$numero, $icono, $titulo, $descripcion])
                     <article class="relative rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm transition duration-200 hover:scale-[1.01] hover:shadow-md">
-                        <span class="font-display text-3xl font-bold text-emerald-600">{{ $numero }}</span>
-                        <span class="absolute right-5 top-5 grid size-11 place-items-center rounded-xl bg-emerald-50 text-lg">{{ $icono }}</span>
+                        <span class="font-display text-2xl font-bold text-primary">{{ $numero }}</span>
+                        <span class="absolute right-5 top-5 action-icon"><x-icon :name="$icono" /></span>
                         <h3 class="mt-3 text-base font-semibold text-slate-900">{{ $titulo }}</h3>
                         <p class="mt-2 text-sm leading-relaxed text-slate-600">{{ $descripcion }}</p>
                     </article>
@@ -237,42 +138,41 @@
     </section>
 
     {{-- ============ TRANSPARENCIA Y COMPUERTA DE CALIDAD (bloque verde bosque) ============ --}}
-    <section id="transparencia" class="scroll-mt-24 px-4 py-16 lg:py-20">
+    <section id="transparencia" class="public-section scroll-mt-24 px-4">
         <div class="mx-auto max-w-6xl overflow-hidden rounded-3xl bg-[#062e24] p-8 text-white shadow-xl shadow-emerald-950/30 lg:p-12">
             <div class="flex flex-col gap-8 lg:flex-row lg:gap-12">
                 {{-- Columna principal --}}
                 <div class="flex-1">
                     <p class="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300">Evidencia pública</p>
-                    <h2 class="font-display mt-3 text-3xl font-semibold sm:text-4xl">Transparencia y compuerta de calidad</h2>
+                    <h2 class="mt-2 font-semibold">Cada paso, visible</h2>
                     <p class="mt-4 max-w-2xl leading-relaxed text-emerald-100/80">
-                        Ningún peso público se cierra sin tres fotos: el daño original, la obra ejecutada y el sello
-                        del dictamen técnico. Explora el caso REP-2026-0148 en sus tres momentos.
+                        Consulta las fotos y la revisión de cada obra. Este es un ejemplo ilustrativo.
                     </p>
 
                     {{-- Pestañas Antes / Durante / Después --}}
                     <div role="tablist" aria-label="Momentos de la evidencia" class="mt-7 inline-flex rounded-xl bg-white/10 p-1">
-                        <button type="button" role="tab" data-tab-btn="antes" data-state="active" aria-selected="true" aria-controls="card-dano"
+                        <button id="tab-antes" type="button" role="tab" data-tab-btn="antes" data-state="active" aria-selected="true" aria-controls="card-dano"
                                 class="rounded-lg px-4 py-2 text-sm text-emerald-50/70 transition duration-200 hover:text-white data-[state=active]:bg-white data-[state=active]:font-semibold data-[state=active]:text-emerald-900 data-[state=active]:shadow-sm">
                             Antes
                         </button>
-                        <button type="button" role="tab" data-tab-btn="durante" aria-selected="false" aria-controls="card-obra"
+                        <button id="tab-durante" type="button" role="tab" data-tab-btn="durante" aria-selected="false" aria-controls="card-obra"
                                 class="rounded-lg px-4 py-2 text-sm text-emerald-50/70 transition duration-200 hover:text-white data-[state=active]:bg-white data-[state=active]:font-semibold data-[state=active]:text-emerald-900 data-[state=active]:shadow-sm">
                             Durante
                         </button>
-                        <button type="button" role="tab" data-tab-btn="despues" aria-selected="false" aria-controls="card-sello"
+                        <button id="tab-despues" type="button" role="tab" data-tab-btn="despues" aria-selected="false" aria-controls="card-sello"
                                 class="rounded-lg px-4 py-2 text-sm text-emerald-50/70 transition duration-200 hover:text-white data-[state=active]:bg-white data-[state=active]:font-semibold data-[state=active]:text-emerald-900 data-[state=active]:shadow-sm">
                             Después
                         </button>
                     </div>
 
                     {{-- Leyenda dinámica por pestaña --}}
-                    <p class="mt-4 min-h-10 text-sm text-emerald-100/75" data-tab-legend="antes">📷 12/09 · Foto del daño original con coordenadas y hora del GPS intactas.</p>
-                    <p class="mt-4 hidden min-h-10 text-sm text-emerald-100/75" data-tab-legend="durante">🚧 20/09 · Cuadrilla en sitio: parcheo asfáltico con foto de ejecución firmada por el residente.</p>
-                    <p class="mt-4 hidden min-h-10 text-sm text-emerald-100/75" data-tab-legend="despues">✅ 23/09 · Sello de verificación técnica: dictamen APROBADO, medición de espesor conforme.</p>
+                    <p class="mt-4 text-sm text-blue-100" data-tab-legend="antes">12/09 · Daño reportado.</p>
+                    <p class="mt-4 hidden text-sm text-blue-100" data-tab-legend="durante">20/09 · Reparación realizada.</p>
+                    <p class="mt-4 hidden text-sm text-blue-100" data-tab-legend="despues">23/09 · Calidad aprobada.</p>
 
                     {{-- Tarjetas de evidencia --}}
-                    <div class="mt-6 grid gap-5 sm:grid-cols-3">
-                        <article id="card-dano" data-tab-card="antes"
+                    <div class="mt-6 grid gap-5">
+                        <article id="card-dano" role="tabpanel" aria-labelledby="tab-antes" tabindex="0" data-tab-card="antes"
                                  class="rounded-2xl bg-white/95 p-4 text-slate-700 ring-emerald-300 transition duration-200">
                             <div class="overflow-hidden rounded-xl bg-slate-100">
                                 <svg viewBox="0 0 200 130" class="h-28 w-full" role="img" aria-label="Foto del daño original: bache en la vía">
@@ -285,11 +185,10 @@
                                     <text x="10" y="18" font-size="9" fill="#f8fafc">REC · GPS ✓</text>
                                 </svg>
                             </div>
-                            <h3 class="mt-3 text-sm font-semibold text-slate-900">Foto Daño Original</h3>
-                            <p class="mt-1 text-xs leading-relaxed text-slate-500">Prueba ciudadana georreferenciada al momento de la radicación.</p>
+                            <h3 class="mt-3 font-semibold text-slate-900">Daño original</h3>
                         </article>
 
-                        <article id="card-obra" data-tab-card="durante"
+                        <article id="card-obra" role="tabpanel" aria-labelledby="tab-durante" tabindex="0" data-tab-card="durante"
                                  class="rounded-2xl bg-white/95 p-4 text-slate-700 ring-emerald-300 transition duration-200">
                             <div class="overflow-hidden rounded-xl bg-slate-100">
                                 <svg viewBox="0 0 200 130" class="h-28 w-full" role="img" aria-label="Foto de obra ejecutada: parcheo asfáltico">
@@ -302,11 +201,10 @@
                                     <text x="10" y="18" font-size="9" fill="#f8fafc">12/09 · cuadrilla 3</text>
                                 </svg>
                             </div>
-                            <h3 class="mt-3 text-sm font-semibold text-slate-900">Foto Obra Ejecutada</h3>
-                            <p class="mt-1 text-xs leading-relaxed text-slate-500">Evidencia de la cuadrilla al finalizar la reparación en sitio.</p>
+                            <h3 class="mt-3 font-semibold text-slate-900">Reparación</h3>
                         </article>
 
-                        <article id="card-sello" data-tab-card="despues"
+                        <article id="card-sello" role="tabpanel" aria-labelledby="tab-despues" tabindex="0" data-tab-card="despues"
                                  class="rounded-2xl bg-white/95 p-4 text-slate-700 ring-emerald-300 transition duration-200">
                             <div class="grid h-28 place-items-center rounded-xl bg-slate-100">
                                 <svg viewBox="0 0 120 120" class="h-20 w-20" role="img" aria-label="Sello de verificación técnica: aprobado">
@@ -316,8 +214,7 @@
                                     <text x="60" y="97" font-size="8" text-anchor="middle" fill="#047857" font-weight="bold">ACTA Nº 482</text>
                                 </svg>
                             </div>
-                            <h3 class="mt-3 text-sm font-semibold text-slate-900">Sello de Verificación Técnica</h3>
-                            <p class="mt-1 text-xs leading-relaxed text-slate-500">Dictamen del inspector: compuerta que aprueba o devuelve la obra.</p>
+                            <h3 class="mt-3 font-semibold text-slate-900">Calidad verificada</h3>
                         </article>
                     </div>
                 </div>
@@ -343,7 +240,7 @@
                     </div>
 
                     <div class="rounded-2xl border border-white/10 bg-white/5 p-5">
-                        <h3 class="text-sm font-semibold text-white">Línea de tiempo de auditoría</h3>
+                        <h3 class="text-sm font-semibold text-white">Historial del ejemplo</h3>
                         <ol class="mt-4 space-y-4 border-l border-white/15 pl-4 text-sm">
                             @foreach ([
                                 ['12/09', 'Radicado ciudadano', 'ticket REP-2026-0148'],
@@ -378,24 +275,23 @@
             fn (int $v, int $i) => round($xAt($i), 1) . ',' . round($yAt($v), 1), $s, array_keys($s)
         )) . ' L' . round($xAt(6), 1) . ',' . round($chartH - $padBottom, 1) . ' L' . round($xAt(0), 1) . ',' . round($chartH - $padBottom, 1) . ' Z';
     @endphp
-    <section id="metricas" class="scroll-mt-24 border-y border-emerald-100 bg-emerald-50/40 py-16 lg:py-20">
-        <div class="mx-auto max-w-6xl px-4">
+    <section id="metricas" class="public-section scroll-mt-24 border-y border-emerald-100 bg-emerald-50/40">
+        <div class="public-section-inner">
             <div class="max-w-2xl">
-                <p class="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-600">Pulso del municipio</p>
-                <h2 class="font-display mt-3 text-3xl font-semibold text-slate-900 sm:text-4xl">Métricas abiertas de gestión</h2>
-                <p class="mt-4 text-slate-600">Cálculo directo sobre el expediente público de incidencias, órdenes de trabajo y dictámenes de calidad.</p>
+                <h2 class="font-semibold text-slate-900">Resultados del municipio</h2>
+                <p class="mt-2 text-slate-600">Avances y tiempos de atención.</p>
             </div>
 
             <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 @foreach ([
-                    ['🟠', 'Incidencias Activas', number_format($stats['active']), 'abiertas en el ciclo actual'],
-                    ['🚧', 'Obras en Ejecución', number_format($stats['orders_executing']), 'órdenes despachadas a cuadrilla'],
-                    ['✅', 'Tasa de Aprobación', $stats['approval_rate'] !== null ? $stats['approval_rate'] . '%' : '—', 'dictámenes conformes'],
-                    ['⏱️', 'SLA Promedio', $stats['sla_days'] !== null ? number_format($stats['sla_days'], 1) . ' días' : '—', 'de la radicación al cierre'],
+                    ['report', 'Reportes activos', number_format($stats['active']), 'Pendientes de solución'],
+                    ['work', 'Obras en curso', number_format($stats['orders_executing']), 'Asignadas a una cuadrilla'],
+                    ['check', 'Aprobación', $stats['approval_rate'] !== null ? $stats['approval_rate'] . '%' : '—', 'Inspecciones aprobadas'],
+                    ['clock', 'Tiempo de solución', $stats['sla_days'] !== null ? number_format($stats['sla_days'], 1) . ' días' : '—', 'Promedio hasta el cierre'],
                 ] as [$icono, $etiqueta, $valor, $pie])
                     <article class="rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm transition duration-200 hover:scale-[1.01] hover:shadow-md">
                         <div class="flex items-center gap-2 text-sm font-medium text-slate-500">
-                            <span>{{ $icono }}</span> {{ $etiqueta }}
+                            <x-icon :name="$icono" /> {{ $etiqueta }}
                         </div>
                         <p class="font-display mt-4 text-4xl font-bold text-emerald-700">{{ $valor }}</p>
                         <p class="mt-2 text-xs text-slate-500">{{ $pie }}</p>
@@ -417,8 +313,8 @@
                      aria-label="Gráfico de líneas: reportes radicados y cerrados durante los últimos siete días">
                     <defs>
                         <linearGradient id="area-radicados" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0" stop-color="#059669" stop-opacity=".28"/>
-                            <stop offset="1" stop-color="#059669" stop-opacity="0"/>
+                            <stop offset="0" stop-color="#1e40af" stop-opacity=".2"/>
+                            <stop offset="1" stop-color="#1e40af" stop-opacity="0"/>
                         </linearGradient>
                     </defs>
 
@@ -430,11 +326,11 @@
                     @endfor
 
                     <path d="{{ $areaPath($trend['created']) }}" fill="url(#area-radicados)"/>
-                    <polyline points="{{ $linePoints($trend['created']) }}" fill="none" stroke="#059669" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <polyline points="{{ $linePoints($trend['created']) }}" fill="none" stroke="#1e40af" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
                     <polyline points="{{ $linePoints($trend['closed']) }}" fill="none" stroke="#0ea5e9" stroke-width="3" stroke-dasharray="7 6" stroke-linecap="round"/>
 
                     @foreach ($trend['created'] as $i => $v)
-                        <circle cx="{{ round($xAt($i), 1) }}" cy="{{ round($yAt($v), 1) }}" r="4.5" fill="#ffffff" stroke="#059669" stroke-width="2.5">
+                        <circle cx="{{ round($xAt($i), 1) }}" cy="{{ round($yAt($v), 1) }}" r="4.5" fill="#ffffff" stroke="#1e40af" stroke-width="2.5">
                             <title>{{ $trend['labels'][$i] }}: {{ $v }} radicados</title>
                         </circle>
                     @endforeach
@@ -449,28 +345,41 @@
                     @endforeach
                 </svg>
 
-                <p class="mt-4 text-xs text-slate-500">Fuente: expediente público de la plataforma · se actualiza con cada radicación y cada cierre de obra.</p>
+                <p class="mt-4 text-sm text-slate-600">Fuente: reportes de la plataforma.</p>
+                <details class="mt-4">
+                    <summary class="font-semibold text-primary">Ver datos de la semana</summary>
+                    <div class="table-scroll mt-3">
+                        <table class="reports-table" role="table">
+                            <caption class="sr-only">Reportes de los últimos siete días</caption>
+                            <thead><tr><th scope="col">Día</th><th scope="col">Recibidos</th><th scope="col">Cerrados</th></tr></thead>
+                            <tbody>
+                                @foreach ($trend['labels'] as $i => $label)
+                                    <tr><td data-label="Día">{{ $label }}</td><td data-label="Recibidos">{{ $trend['created'][$i] }}</td><td data-label="Cerrados">{{ $trend['closed'][$i] }}</td></tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
             </div>
         </div>
     </section>
 
     {{-- ============================ PARTICIPA ============================ --}}
-    <section id="participa" class="scroll-mt-24 px-4 py-16 lg:py-20">
-        <div class="mx-auto max-w-6xl">
+    <section id="participa" class="public-section scroll-mt-24">
+        <div class="public-section-inner">
             <div class="mx-auto max-w-2xl text-center">
-                <p class="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-600">Participa en el control social</p>
-                <h2 class="font-display mt-3 text-3xl font-semibold text-slate-900 sm:text-4xl">Control social abierto, veeduría activa</h2>
-                <p class="mt-4 text-slate-600">Cualquier habitante puede auditar y radicar reportes sin registro previo. La plataforma articula ciudadanía, contratistas y funcionarios alrededor del mismo expediente.</p>
+                <h2 class="font-semibold text-slate-900">Una tarea compartida</h2>
+                <p class="mt-2 text-slate-600">Ciudadanía y entidad, conectadas.</p>
             </div>
 
             <div class="mt-10 grid gap-6 md:grid-cols-3">
                 @foreach ([
-                    ['👁️', 'Control Social Abierto', 'text-emerald-600', 'bg-emerald-50', 'Cualquier ciudadano puede radicar reportes de daños en la vía pública sin necesidad de crear una cuenta. Sin fricción, sin registro.'],
-                    ['🧰', 'Contratista', 'text-sky-600', 'bg-sky-50', 'Recibe órdenes despachadas, agenda la ejecución en sitio y carga la foto de solución como evidencia.'],
-                    ['🏛️', 'Funcionario Municipal', 'text-violet-600', 'bg-violet-50', 'Valida incidencias, asigna cuadrillas, audita calidad y monitorea el pulso operativo del municipio.'],
+                    ['report', 'Ciudadanía', 'text-primary', 'bg-blue-50', 'Reporta y consulta sin crear una cuenta.'],
+                    ['work', 'Contratistas', 'text-primary', 'bg-blue-50', 'Reparan y registran los trabajos.'],
+                    ['shield', 'Entidad', 'text-primary', 'bg-blue-50', 'Coordina y verifica la calidad.'],
                 ] as [$icono, $titulo, $color, $fondo, $descripcion])
                     <article class="rounded-2xl border border-emerald-100 bg-white p-7 shadow-sm transition duration-200 hover:scale-[1.01] hover:shadow-md">
-                        <span class="grid size-12 place-items-center rounded-2xl {{ $fondo }} text-2xl">{{ $icono }}</span>
+                        <span class="action-icon"><x-icon :name="$icono" /></span>
                         <h3 class="mt-4 text-lg font-semibold {{ $color }}">{{ $titulo }}</h3>
                         <p class="mt-2 text-sm leading-relaxed text-slate-600">{{ $descripcion }}</p>
                     </article>
@@ -479,18 +388,22 @@
 
             {{-- CTA: acceso institucional (sin registro público) --}}
             <div class="mt-12 rounded-3xl bg-[#062e24] p-10 text-center shadow-xl shadow-emerald-950/20 sm:p-14">
-                <h3 class="font-display text-2xl font-semibold text-white sm:text-3xl">¿Eres personal institucional autorizado?</h3>
+                <h3 class="font-semibold text-white">Espacio de trabajo</h3>
                 <p class="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-emerald-100/75">
-                    El acceso al sistema está restringido a personal de Alcaldía, contratistas e inspectores de calidad. Si tu cuenta fue habilitada, ingresa con tus credenciales.
+                    Solo para personal de la entidad, contratistas e inspectores con cuenta habilitada.
                 </p>
                 <a href="{{ route('login') }}"
                    class="mt-7 inline-flex rounded-xl bg-white px-6 py-3 text-sm font-semibold text-emerald-700 shadow-md transition duration-200 hover:bg-emerald-50 hover:scale-[1.01] active:scale-[0.98]">
-                    Acceso Institucional (Personal Autorizado)
+                    Ingresar
                 </a>
             </div>
         </div>
     </section>
 
+        </div>
+    </details>
+    </div>
+    </main>
     {{-- ============================ FOOTER ============================ --}}
     <footer class="bg-[#041c16] text-slate-300">
         <div class="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:grid-cols-2 lg:grid-cols-4">
@@ -502,7 +415,7 @@
                     <span class="text-sm font-semibold text-white">Vigía Ciudadano</span>
                 </div>
                 <p class="mt-4 text-sm leading-relaxed text-slate-400">
-                    Plataforma de control social y veeduría de obra pública municipal. Cada reporte deja evidencia pública, auditable e inmodificable.
+                    Gestión ciudadana para una comunidad mejor atendida.
                 </p>
             </div>
 
@@ -541,36 +454,8 @@
         </div>
     </footer>
 
-    {{-- ============ MODAL: consulta rápida de ticket ============ --}}
-    <div id="ticket-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="ticket-modal-title">
-        <div class="absolute inset-0 bg-emerald-950/60 backdrop-blur-sm" data-close-ticket-modal></div>
 
-        <div class="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-            <h3 id="ticket-modal-title" class="font-display text-xl font-semibold text-slate-900">Consultar Incidencia</h3>
-            <p class="mt-2 text-sm text-slate-600">Ingresa el código que recibiste al radicar tu reporte.</p>
-
-            <form id="ticket-form" class="mt-5">
-                <label for="ticket-code" class="mb-1.5 block text-sm font-medium text-slate-700">Código de ticket</label>
-                <input id="ticket-code" type="text" autocomplete="off" placeholder="REP-2026-0148"
-                       spellcheck="false"
-                       class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono text-sm uppercase text-slate-800 outline-none transition duration-200 placeholder:normal-case placeholder:font-sans placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/25">
-                <p id="ticket-error" class="mt-1.5 hidden text-xs text-rose-600">Formato inválido. Ejemplo válido: REP-2026-0148.</p>
-
-                <div class="mt-6 flex justify-end gap-2">
-                    <button type="button" data-close-ticket-modal
-                            class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 transition duration-200 hover:bg-slate-50">
-                        Cancelar
-                    </button>
-                    <button type="submit"
-                            class="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition duration-200 hover:bg-emerald-700 active:scale-[0.98]">
-                        Consultar
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    {{-- ============ JS de la landing: pestañas de evidencia + modal de ticket ============ --}}
+    {{-- Pestañas del ejemplo de evidencia. La consulta ciudadana está en línea. --}}
     <script>
         (function () {
             'use strict';
@@ -585,16 +470,16 @@
                     var active = btn.getAttribute('data-tab-btn') === key;
                     btn.setAttribute('data-state', active ? 'active' : 'inactive');
                     btn.setAttribute('aria-selected', active ? 'true' : 'false');
+                    btn.tabIndex = active ? 0 : -1;
                 });
                 tabLegends.forEach(function (p) {
                     p.classList.toggle('hidden', p.getAttribute('data-tab-legend') !== key);
                 });
                 tabCards.forEach(function (card) {
                     var active = card.getAttribute('data-tab-card') === key;
+                    card.hidden = !active;
                     card.classList.toggle('ring-4', active);
                     card.classList.toggle('opacity-100', active);
-                    card.classList.toggle('opacity-60', !active);
-                    card.classList.toggle('-translate-y-1', active);
                 });
             }
 
@@ -602,50 +487,22 @@
                 btn.addEventListener('click', function () {
                     activateTab(btn.getAttribute('data-tab-btn'));
                 });
+                btn.addEventListener('keydown', function (event) {
+                    var buttons = Array.from(tabButtons);
+                    var index = buttons.indexOf(btn);
+                    var next;
+                    if (event.key === 'ArrowRight') next = (index + 1) % buttons.length;
+                    if (event.key === 'ArrowLeft') next = (index - 1 + buttons.length) % buttons.length;
+                    if (event.key === 'Home') next = 0;
+                    if (event.key === 'End') next = buttons.length - 1;
+                    if (next === undefined) return;
+                    event.preventDefault();
+                    activateTab(buttons[next].getAttribute('data-tab-btn'));
+                    buttons[next].focus();
+                });
             });
             activateTab('antes');
 
-            // --- Modal de consulta rápida de ticket ---
-            var modal = document.getElementById('ticket-modal');
-            var form = document.getElementById('ticket-form');
-            var input = document.getElementById('ticket-code');
-            var error = document.getElementById('ticket-error');
-            var consultBase = @json(route('reports.show', ['ticket_code' => '__CODE__']));
-
-            function openModal() {
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-                input.focus();
-            }
-
-            function closeModal() {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-                error.classList.add('hidden');
-            }
-
-            document.querySelectorAll('[data-open-ticket-modal]').forEach(function (btn) {
-                btn.addEventListener('click', openModal);
-            });
-            document.querySelectorAll('[data-close-ticket-modal]').forEach(function (btn) {
-                btn.addEventListener('click', closeModal);
-            });
-            document.addEventListener('keydown', function (ev) {
-                if (ev.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
-            });
-
-            form.addEventListener('submit', function (ev) {
-                ev.preventDefault();
-                var code = input.value.trim().toUpperCase();
-                if (!/^REP-\d{4}-\d{4,5}$/.test(code)) {
-                    error.classList.remove('hidden');
-                    input.focus();
-                    return;
-                }
-                // Invitado → el middleware auth pide login y recuerda el destino;
-                // tras autenticarse cae directo en la trazabilidad del ticket.
-                window.location.href = consultBase.replace('__CODE__', encodeURIComponent(code));
-            });
         })();
     </script>
 
@@ -666,6 +523,9 @@
                 zoomControl: true,
                 scrollWheelZoom: false,
             }).setView([3.0095, -76.4849], 14);
+            document.querySelector('.citizen-extras')?.addEventListener('toggle', function (event) {
+                if (event.currentTarget.open) requestAnimationFrame(function () { map.invalidateSize(); });
+            });
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
@@ -681,7 +541,7 @@
                     var count = cluster.getChildCount();
                     var dim = count >= 50 ? 56 : (count >= 10 ? 48 : 38);
                     return L.divIcon({
-                        html: '<div style="width:' + dim + 'px;height:' + dim + 'px;border-radius:50%;background:#087b5f;color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);">' + count + '</div>',
+                        html: '<div style="width:' + dim + 'px;height:' + dim + 'px;border-radius:50%;background:#1e40af;color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.2);">' + count + '</div>',
                         className: '',
                         iconSize: L.point(dim, dim),
                     });
@@ -723,11 +583,11 @@
                 return '<div style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;">'
                     + photoHtml
                     + '<div style="padding:10px 12px;">'
-                    + '<p style="font-family:monospace;font-size:10px;color:#597268;font-weight:600;margin:0;">' + escHtml(r.ticket_code) + '</p>'
-                    + '<p style="font-size:13px;font-weight:700;color:#062e24;margin:3px 0;line-height:1.3;">' + escHtml(r.title) + '</p>'
-                    + '<p style="font-size:11px;color:#1f5142;margin:0;">📁 ' + escHtml(r.category_name) + '</p>'
-                    + '<span style="display:inline-block;padding:2px 8px;border-radius:9999px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-top:6px;background:' + bc.bg + ';color:' + bc.text + ';">' + escHtml(r.status_label) + '</span>'
-                    + '<a href="' + escHtml(r.detail_url) + '" style="display:block;text-align:center;margin-top:8px;padding:6px 12px;background:#087b5f;color:white;border-radius:8px;text-decoration:none;font-size:11px;font-weight:600;">Ver detalle →</a>'
+                    + '<p style="font-family:monospace;font-size:16px;color:#4c6075;font-weight:600;margin:0;">' + escHtml(r.ticket_code) + '</p>'
+                    + '<p style="font-size:18px;font-weight:700;color:#172b43;margin:8px 0;line-height:1.4;">' + escHtml(r.title) + '</p>'
+                    + '<p style="font-size:16px;color:#4c6075;margin:0;">' + escHtml(r.category_name) + '</p>'
+                    + '<span style="display:inline-block;padding:4px 8px;border-radius:9999px;font-size:16px;font-weight:600;margin-top:8px;background:' + bc.bg + ';color:' + bc.text + ';">' + escHtml(r.status_label) + '</span>'
+                    + '<a href="' + escHtml(r.detail_url) + '" style="display:block;text-align:center;margin-top:12px;min-height:48px;padding:12px;background:#173d68;color:white;border-radius:8px;text-decoration:none;font-size:16px;font-weight:600;">Ver detalles</a>'
                     + '</div></div>';
             }
 
@@ -741,7 +601,7 @@
                     statsEl.textContent = reports.length;
 
                     reports.forEach(function (r) {
-                        var marker = L.marker([r.latitude, r.longitude], { icon: createIcon(r.marker_color) });
+                        var marker = L.marker([r.latitude, r.longitude], { icon: createIcon(r.marker_color), title: r.ticket_code + ': ' + r.title, alt: r.ticket_code + ': ' + r.title });
                         marker.bindPopup(buildPopup(r), { maxWidth: 210, minWidth: 210, closeButton: true });
                         clusterGroup.addLayer(marker);
                     });

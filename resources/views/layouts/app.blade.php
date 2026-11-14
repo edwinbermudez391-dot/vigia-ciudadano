@@ -6,162 +6,68 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" type="image/png" href="{{ asset('imagenes/logo-vigia.png') }}">
     <title>@yield('title', 'Vigía Ciudadano')</title>
-
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-
     @stack('head')
 </head>
-<body class="bg-background text-text-primary min-h-screen relative overflow-x-hidden antialiased flex flex-col font-sans">
-
-    {{-- ==================== ORBES DECORATIVOS (identidad landing) ==================== --}}
-    <div class="fixed inset-0 pointer-events-none -z-10 overflow-hidden" aria-hidden="true">
-        <div class="absolute -top-20 -right-20 w-96 h-96 rounded-full bg-primary/10 opacity-60 blur-3xl"></div>
-        <div class="absolute top-1/2 -left-24 w-80 h-80 rounded-full bg-secondary/10 opacity-60 blur-3xl"></div>
-        <div class="absolute -bottom-20 right-1/4 w-96 h-96 rounded-full bg-success/10 opacity-50 blur-3xl"></div>
-    </div>
-
-    {{-- ============================ NAV ============================ --}}
-    @php $user = auth()->user(); @endphp
-    @unless (request()->routeIs('login'))
-        <nav class="bg-white/90 backdrop-blur-md border-b border-border sticky top-0 z-40 text-text-primary shadow-sm">
-            <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-                <a href="{{ route('home') }}" class="flex items-center gap-2.5 transition duration-200 hover:opacity-80">
-                    <span class="grid size-9 place-items-center rounded-xl bg-white shadow-md shadow-primary/25 overflow-hidden">
-                        <img src="{{ asset('imagenes/logo-vigia.png') }}" alt="Logo Vigía Ciudadano" class="h-full w-auto object-contain">
-                    </span>
-                    <span class="hidden leading-tight sm:block">
-                        <span class="block text-sm font-semibold tracking-tight text-text-primary">Vigía Ciudadano</span>
-                        <span class="block text-xs text-secondary">Control de obra pública</span>
-                    </span>
-                </a>
-
-                @auth
-                    {{-- Menú según rol autenticado --}}
-                    <div class="hidden items-center gap-1 md:flex">
-                        @if ($user->isContractor())
-                            <x-nav-link :href="route('contractor.orders')" :active="request()->routeIs('contractor.*')">
-                                🧰 Mis órdenes
-                            </x-nav-link>
-                        @elseif ($user->isInspector())
-                            <x-nav-link :href="route('inspector.queue')" :active="request()->routeIs('inspector.*')">
-                                🔍 Inspecciones
-                            </x-nav-link>
-                        @else
-                            <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
-                                🏛️ Panel
-                            </x-nav-link>
-                            <x-nav-link :href="route('admin.analytics')" :active="request()->routeIs('admin.analytics*')">
-                                📊 Analítica
-                            </x-nav-link>
-                            <x-nav-link :href="route('admin.contractors')" :active="request()->routeIs('admin.contractors*')">
-                                👷 Cuadrillas
-                            </x-nav-link>
-                        @endif
-                    </div>
-
-                    <div class="flex items-center gap-2">
-                        <div class="hidden items-center gap-2 rounded-xl border border-border bg-primary/5 px-3 py-1.5 sm:flex">
-                            <span class="grid size-7 place-items-center rounded-lg bg-primary text-xs font-bold uppercase text-white">
-                                {{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}
-                            </span>
-                            <span class="leading-tight">
-                                <span class="block max-w-36 truncate text-xs font-medium text-text-primary">{{ $user->name }}</span>
-                                <span class="block text-[11px] font-semibold text-secondary bg-secondary/10 px-2.5 py-1 rounded-full">
-                                    {{ \App\Support\RoleUi::label($user->role) }}
-                                </span>
-                            </span>
-                        </div>
-
-                        {{-- La sesión se cierra por POST con CSRF (logout() del AuthController) --}}
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-                            <button type="submit"
-                                    class="text-rose-600 hover:bg-rose-50 px-3 py-1.5 rounded-lg text-sm font-semibold transition">
-                                Salir
-                            </button>
-                        </form>
-                    </div>
-                @endauth
-
-                @guest
-                    {{-- En rutas públicas de reportes, mostrar botón de retorno en lugar de login --}}
-                    @if (request()->routeIs('reports.*'))
-                        <a href="{{ route('home') }}"
-                           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-[#1f5142] bg-white border border-[#d5e8e0] hover:bg-[#f0faf5] hover:text-[#087b5f] hover:border-[#b9daca] transition shadow-sm">
-                            <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                            </svg>
-                            Volver al inicio
-                        </a>
-                    @elseif (request()->routeIs('map'))
-                        {{-- En la página del mapa, mostrar botón de regreso y radicar reporte --}}
-                        <div class="flex items-center gap-3">
-                            <a href="{{ route('home') }}"
-                               class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-[#1f5142] bg-white border border-[#d5e8e0] hover:bg-[#f0faf5] hover:text-[#087b5f] hover:border-[#b9daca] transition shadow-sm">
-                                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                                </svg>
-                                Regresar
-                            </a>
-                            <a href="{{ route('reports.create') }}"
-                               class="rounded-xl bg-[#087b5f] px-4 py-2 text-sm font-semibold text-white shadow-sm transition duration-200 hover:bg-[#05664e] active:scale-[0.98]">
-                                Radicar Reporte
-                            </a>
-                        </div>
-                    @else
-                        <a href="{{ route('login') }}"
-                           class="rounded-xl bg-[#087b5f] px-4 py-2 text-sm font-semibold text-white shadow-sm transition duration-200 hover:bg-[#05664e] active:scale-[0.98]">
-                            Iniciar sesión
-                        </a>
-                    @endif
-                @endguest
-            </div>
-
-            {{-- Accesibilidad del menú en pantallas medianas-chicas --}}
+@php
+    $user = auth()->user();
+    $institutional = $user && ($user->isSuperAdmin() || $user->isContractor() || $user->isInspector());
+    $citizen = !$institutional && (request()->is('reportes*') || request()->routeIs('map'));
+@endphp
+<body class="institutional-ui min-h-screen font-sans antialiased {{ $institutional ? 'has-sidebar' : '' }} {{ $citizen ? 'citizen-ui' : '' }}">
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+    <header class="app-header">
+        <div class="app-header-inner">
+            <a href="{{ route('home') }}" class="brand">
+                <img src="{{ asset('imagenes/logo-vigia.png') }}" alt="" width="48" height="48">
+                <span><strong>Vigía Ciudadano</strong></span>
+            </a>
             @auth
-                <div class="flex gap-1 overflow-x-auto px-4 pb-2 md:hidden">
-                    @if ($user->isContractor())
-                        <x-nav-link :href="route('contractor.orders')" :active="request()->routeIs('contractor.*')">🧰 Órdenes</x-nav-link>
-                    @elseif ($user->isInspector())
-                        <x-nav-link :href="route('inspector.queue')" :active="request()->routeIs('inspector.*')">🔍 Inspecciones</x-nav-link>
-                    @else
-                        <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">🏛️ Panel</x-nav-link>
-                        <x-nav-link :href="route('admin.analytics')" :active="request()->routeIs('admin.analytics*')">📊 Analítica</x-nav-link>
-                        <x-nav-link :href="route('admin.contractors')" :active="request()->routeIs('admin.contractors*')">👷 Cuadrillas</x-nav-link>
-                    @endif
+                <div class="session-info">
+                    <span class="user-avatar" aria-hidden="true">{{ mb_substr($user->name, 0, 1) }}</span>
+                    <div><strong>{{ $user->name }}</strong><span>{{ \App\Support\RoleUi::label($user->role) }}</span></div>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="btn-secondary"><x-icon name="logout" />Cerrar sesión</button>
+                    </form>
                 </div>
+            @else
+                <x-public-navigation />
             @endauth
-        </nav>
-    @endunless
+        </div>
+    </header>
 
-    {{-- ========================= FLASHES ========================= --}}
-    <div class="mx-auto max-w-7xl space-y-3 px-4 pt-4 sm:px-6 lg:px-8">
+    <div class="app-shell">
+    @if ($institutional)
+        <div class="mobile-menu-bar"><button type="button" class="btn-secondary" data-sidebar-mobile aria-controls="primary-sidebar" aria-expanded="false"><x-icon name="menu" />Menú</button></div>
+        <x-sidebar />
+    @endif
+
+    <div class="app-workspace">
+    <main id="main-content" tabindex="-1" class="app-main">
+        @if ($citizen)<x-citizen-tools />@endif
         @if (session('status'))
-            <div class="flex items-start gap-3 rounded-2xl border border-[#c1e5d6] bg-[#e2f5eb] px-4 py-3 text-sm font-medium text-[#09654e] shadow-sm"
-                 role="status">
-                <span class="mt-0.5">✅</span>
-                <p>{{ session('status') }}</p>
-            </div>
+            <div class="notice notice-success" role="status"><strong>Operación realizada.</strong> {{ session('status') }}</div>
         @endif
-
         @if (session('error'))
-            <div class="flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 shadow-sm"
-                 role="alert">
-                <span class="mt-0.5">⚠️</span>
-                <p>{{ session('error') }}</p>
+            <div class="notice notice-error" role="alert"><strong>No se pudo completar la operación.</strong> {{ session('error') }}</div>
+        @endif
+        @if ($errors->any() && !$citizen)
+            <div class="notice notice-error" role="alert" tabindex="-1" data-error-summary>
+                <strong>Revisa los siguientes datos antes de continuar:</strong>
+                <ul class="mt-2 list-disc pl-6">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+                <p class="mt-2">Si adjuntaste fotografías, vuelve a seleccionarlas.</p>
             </div>
         @endif
-    </div>
-
-    {{-- ========================= CONTENT ========================= --}}
-    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
         @yield('content')
     </main>
-
-    <footer class="border-t border-[#d5e8e0] py-6 text-center text-xs text-[#5d7d70]">
-        Vigía Ciudadano · {{ date('Y') }} — La obra pública, vigilada por todos.
-    </footer>
-
+    <footer class="app-footer">Vigía Ciudadano · {{ date('Y') }} · La obra pública, vigilada por todos.</footer>
+    </div>
+    </div>
     @stack('scripts')
 </body>
 </html>

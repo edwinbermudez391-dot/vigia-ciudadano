@@ -6,6 +6,6 @@
     $ui = \App\Support\StatusUi::badge($status);
 @endphp
 
-<span {{ $attributes->merge(['class' => 'inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium '.$ui['classes']]) }}>
+<span {{ $attributes->merge(['class' => 'status-badge inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-base font-semibold '.$ui['classes']]) }}>
     {{ $ui['label'] }}
 </span>

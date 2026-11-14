@@ -34,6 +34,7 @@
 @endpush
 
 @section('content')
+<x-page-heading title="Mapa de reportes" description="Filtra por estado y selecciona un punto para ver el reporte." />
 <div class="relative">
     {{-- Estadísticas del mapa --}}
     <div class="map-stats" id="map-stats">
@@ -41,15 +42,16 @@
     </div>
 
     {{-- Contenedor del mapa --}}
-    <div id="full-map" role="application" aria-label="Mapa interactivo de incidencias ciudadanas"></div>
+    <p class="field-help mb-4">Usa las teclas de dirección para recorrer el mapa y + / − para acercarlo o alejarlo. Los puntos se pueden abrir con el teclado.</p>
+    <div id="full-map" role="region" aria-label="Mapa interactivo de incidencias ciudadanas"></div>
 
     {{-- Barra de filtros por estado --}}
-    <div class="map-filter-bar" id="map-filters">
-        <button type="button" class="map-filter-btn active" data-filter="all">Todos</button>
-        <button type="button" class="map-filter-btn" data-filter="reported" style="--dot:#eab308">🟡 Reportados</button>
-        <button type="button" class="map-filter-btn" data-filter="in_progress" style="--dot:#3b82f6">🔵 En progreso</button>
-        <button type="button" class="map-filter-btn" data-filter="under_inspection" style="--dot:#8b5cf6">🟣 Inspección</button>
-        <button type="button" class="map-filter-btn" data-filter="rework" style="--dot:#ef4444">🔴 Retrabajo</button>
+    <div class="map-filter-bar" id="map-filters" role="group" aria-label="Filtrar reportes del mapa por estado">
+        <button type="button" class="map-filter-btn active" data-filter="all" aria-pressed="true">Todos</button>
+        <button type="button" class="map-filter-btn" data-filter="reported" aria-pressed="false" style="--dot:#eab308">🟡 Reportados</button>
+        <button type="button" class="map-filter-btn" data-filter="in_progress" aria-pressed="false" style="--dot:#3b82f6">🔵 En progreso</button>
+        <button type="button" class="map-filter-btn" data-filter="under_inspection" aria-pressed="false" style="--dot:#8b5cf6">🟣 Inspección</button>
+        <button type="button" class="map-filter-btn" data-filter="rework" aria-pressed="false" style="--dot:#ef4444">🔴 Retrabajo</button>
     </div>
 </div>
 @endsection
@@ -176,6 +178,8 @@
 
             reports.forEach(function (report) {
                 const marker = L.marker([report.latitude, report.longitude], {
+                    title: report.ticket_code + ': ' + report.title,
+                    alt: report.ticket_code + ': ' + report.title,
                     icon: createMarkerIcon(report.marker_color),
                 });
 
@@ -217,6 +221,7 @@
         // Actualizar botones activos
         filtersEl.querySelectorAll('.map-filter-btn').forEach(function (b) {
             b.classList.toggle('active', b.dataset.filter === filter);
+            b.setAttribute('aria-pressed', String(b.dataset.filter === filter));
         });
 
         // Filtrar marcadores

@@ -94,7 +94,8 @@ final class WebSmokeTest extends TestCase
         $this->get('/reportes/crear')
             ->assertStatus(200)
             ->assertSee('Baches y Malla Vial')
-            ->assertSee('capture="environment"', false);
+            ->assertSee('data-photo-camera', false)
+            ->assertSee('accept="image/jpeg,image/png,image/webp"', false);
     }
 
     public function test_show_page_renders_timeline_for_ticket_publicly(): void
@@ -127,8 +128,8 @@ final class WebSmokeTest extends TestCase
         $this->get('/reportes/REP-2026-0007')
             ->assertStatus(200)
             ->assertSee('REP-2026-0007')
-            ->assertSee('Reporte radado')
-            ->assertSee('Asignación a contratista');
+            ->assertSee('Recibido')
+            ->assertSee('Pendiente de asignación');
     }
 
     public function test_inspector_pages_are_gated_by_role(): void
@@ -145,7 +146,7 @@ final class WebSmokeTest extends TestCase
     public function test_admin_and_contractor_landing_pages_render(): void
     {
         $this->actingAsRole(UserRole::SuperAdmin);
-        $this->get('/admin')->assertStatus(200)->assertSee('Pulso del municipio');
+        $this->get('/admin')->assertStatus(200)->assertSee('Gestión ciudadana');
 
         $this->actingAsRole(UserRole::Contractor);
         $this->get('/ordenes')->assertStatus(200)->assertSee('Mis órdenes de trabajo');

@@ -31,9 +31,16 @@ final class AdminController extends Controller
         private readonly WorkOrderDispatcher $dispatcher,
     ) {}
 
-    public function dashboard(): View
+    public function dashboard(\Illuminate\Http\Request $request): View
     {
+        $filters = $request->validate([
+            'q' => ['nullable', 'string', 'max:150'],
+            'status' => ['nullable', \Illuminate\Validation\Rule::enum(ReportStatus::class)],
+        ]);
         $stats = [
+            'total' => Report::query()->count(),
+            'pending' => Report::query()->status(ReportStatus::Reported)->count(),
+            'closed' => Report::query()->status(ReportStatus::Closed)->count(),
             'open' => Report::query()->where('status', '!=', ReportStatus::Closed->value)->count(),
             'in_progress' => Report::query()->status(ReportStatus::InProgress)->count(),
             'under_inspection' => Report::query()->status(ReportStatus::UnderInspection)->count(),
@@ -53,9 +60,16 @@ final class AdminController extends Controller
 
         $recent = Report::query()
             ->with(['category:id,name', 'workOrder:id,report_id,status,contractor_id'])
+            ->when($filters['q'] ?? null, function ($query, $search): void {
+                $query->where(function ($query) use ($search): void {
+                    $query->where('title', 'like', '%'.$search.'%')
+                        ->orWhere('ticket_code', 'like', '%'.$search.'%');
+                });
+            })
+            ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
             ->latest()
-            ->limit(10)
-            ->get();
+            ->paginate(10)
+            ->withQueryString();
 
         // Inyección para los modales "Asignar Cuadrilla" del dashboard:
         // solo cuadrillas activas (la elegibilidad de fondo la re-valida

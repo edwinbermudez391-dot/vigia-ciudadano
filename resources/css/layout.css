@@ -1,0 +1,116 @@
+/* Layout ownership lives here. Breakpoints match Tailwind: md 48rem, lg 64rem,
+   xl 80rem. Utilities remain responsible for content styling, not shell sizing. */
+.app-header-inner {
+    width: 100%; max-width: 80rem; margin-inline: auto; padding: .75rem 1rem;
+    display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap;
+}
+.app-main { width: 100%; max-width: 80rem; min-height: 65vh; margin-inline: auto; padding: 1.5rem 1rem 3rem; }
+.public-navigation { display: flex; flex: 1 0 100%; flex-wrap: wrap; gap: .25rem; order: 4; }
+.public-navigation .nav-link { flex: 1 1 100%; }
+.public-menu-toggle { display: none; padding: .625rem; order: 3; }
+.public-login { order: 2; margin-left: auto; }
+.navigation-ready .public-menu-toggle { display: inline-flex; }
+.navigation-ready .public-navigation:not(.is-open) { display: none; }
+
+.public-hero { background: #f3f6fa; border-bottom: 1px solid #d4dee9; }
+.hero-layout { display: grid; align-items: center; gap: 1.5rem; max-width: 80rem; margin-inline: auto; padding: 2rem 1rem; }
+.public-hero .hero-title { font-size: clamp(1.875rem, 4vw, 2.125rem); line-height: 1.15; max-width: 22ch; letter-spacing: -.03em; }
+.hero-actions { display: flex; flex-direction: column; gap: .75rem; margin-top: 1.5rem; }
+.public-service-card { padding: 1.5rem; border: 1px solid #dbe4f0; border-radius: 1rem; background: white; box-shadow: 0 8px 24px #0f172a06; }
+.public-service-card h2 { margin-bottom: 1.25rem; }
+.report-steps { display: grid; gap: 1rem; margin-bottom: 1.25rem; }
+.report-steps li { display: flex; align-items: start; gap: .75rem; }
+.step-icon { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; flex-shrink: 0; border-radius: .625rem; background: #eff6ff; color: #1e40af; }
+.report-steps strong { display: block; font-size: 1rem; }
+.report-steps p { font-size: .9375rem; color: #475569; margin-top: .25rem; }
+.public-section { padding-block: 2.5rem; }
+.public-section-inner { width: 100%; max-width: 80rem; margin-inline: auto; padding-inline: 1rem; }
+.public-portal main > section :is(.mt-10, .mt-12) { margin-top: 1.5rem; }
+
+/* Mobile: one reading column and the existing disclosure navigation. */
+.app-shell { min-width: 0; }
+.app-sidebar { min-width: 0; padding: 1rem; border-bottom: 1px solid #e2e8f0; background: white; }
+.sidebar-nav { display: grid; grid-template-columns: 1fr; gap: .5rem; }
+.nav-group-label { grid-column: 1 / -1; }
+.sidebar-nav .nav-link { width: 100%; }
+.sidebar-heading, .sidebar-bottom, .mobile-menu-bar { display: none; }
+.sidebar-ready .mobile-menu-bar { display: block; padding: .5rem 1rem; border-bottom: 1px solid #e2e8f0; background: white; }
+.sidebar-ready .app-sidebar { display: none; }
+.sidebar-ready.sidebar-open .app-sidebar { display: block; }
+.stats-grid { display: grid; grid-template-columns: 1fr; gap: 1.25rem; }
+.support-grid { display: grid; grid-template-columns: 1fr; gap: 1.25rem; }
+.work-grid { display: grid; gap: 1.5rem; }
+.work-grid > [data-search-empty], .work-grid > .empty-state { grid-column: 1 / -1; }
+.report-create-page { max-width: 48rem; margin-inline: auto; }
+.report-detail-page, .audit-page { max-width: 60rem; margin-inline: auto; }
+.report-detail-grid { display: grid; gap: 1.5rem; }
+.audit-form { display: grid; gap: 1.25rem; }
+.report-detail-main, .report-detail-side { display: grid; gap: 1.5rem; align-content: start; min-width: 0; }
+.report-create-form { display: grid; gap: 1.5rem; }
+.report-create-form > .form-section { margin: 0; }
+
+@media (min-width: 30.01rem) {
+    .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .sidebar-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 40rem) {
+    .hero-actions { flex-direction: row; flex-wrap: wrap; }
+}
+@media (min-width: 64rem) {
+    /* Desktop header: a single row, with one copy of each navigation link. */
+    .app-header-inner { padding: .5rem 1.5rem; flex-wrap: nowrap; }
+    .app-header-inner:has(.public-navigation) { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 1rem; }
+    .app-header-inner .brand { flex: initial; }
+    .app-header-inner .brand img { width: 3rem; height: 3rem; }
+    .app-header-inner .brand strong { font-size: 1.25rem; }
+    .public-navigation, .navigation-ready .public-navigation:not(.is-open) { display: flex; flex-wrap: nowrap; order: 1; }
+    .public-navigation .nav-link { flex: 0 1 auto; padding-inline: .625rem; }
+    .navigation-ready .public-menu-toggle { display: none; }
+    .public-login { margin-left: 0; }
+    .hero-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2rem; padding: 2.5rem 1.5rem; }
+    .public-hero .hero-title { font-size: clamp(2.375rem, 3.2vw, 2.75rem); }
+    .hero-actions :is(a, button), .public-login, .app-header .btn-secondary { min-height: 2.75rem; padding-block: .625rem; }
+    .report-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
+    .report-steps li { flex-direction: column; gap: .625rem; padding: .875rem; border: 1px solid #e2e8f0; border-radius: .75rem; background: #f8fafc; }
+    .public-service-card > a { width: auto; min-height: 2.75rem; padding-block: .625rem; }
+    .public-section { padding-block: 2rem; }
+    .public-section-inner { padding-inline: 1.5rem; }
+    .app-main { padding: 1.5rem 1.5rem 2.5rem; }
+    .app-main :is(.btn, .btn-primary, .btn-secondary) { min-height: 3rem; padding-block: .625rem; }
+    /* Small desktops get horizontal workspace navigation; wide desktops get a rail. */
+    .sidebar-ready .mobile-menu-bar { display: none; }
+    .sidebar-ready .app-sidebar, .sidebar-ready.sidebar-open .app-sidebar { display: block; padding: .5rem 1.5rem; }
+    .sidebar-nav { display: flex; flex-direction: row; flex-wrap: wrap; max-width: 77rem; margin-inline: auto; }
+    .sidebar-nav .nav-link { width: auto; }
+    .sidebar-nav .nav-group-label { display: none; }
+    .stats-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+    .support-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .work-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .work-grid .work-card { display: flex; flex-direction: column; }
+    .work-grid .inspection-evidence { gap: .75rem; }
+    .report-create-page, .report-detail-page, .audit-page { max-width: 80rem; }
+    .report-create-form { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+    .report-category-section, .report-submit { grid-column: 1 / -1; }
+    .report-submit { justify-self: end; width: min(100%, 28rem); }
+    .report-create-form [data-photo-placeholder] { min-height: 16rem; }
+    .report-detail-grid { grid-template-columns: minmax(0, 1.65fr) minmax(17rem, 1fr); align-items: start; }
+    .audit-form { grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); align-items: start; }
+    .audit-form > #rework-panel, .audit-decision { grid-column: 1 / -1; }
+    .audit-form .checklist-item { padding: 1rem; gap: .75rem; }
+    .audit-form .checklist-options { flex: 0 0 13rem; }
+    .audit-form .checklist-options button { padding: .625rem .5rem; }
+}
+@media (min-width: 80rem) {
+    .has-sidebar .app-shell { display: grid; grid-template-columns: 14rem minmax(0, 1fr); min-height: calc(100vh - 69px); }
+    .has-sidebar .app-sidebar { display: flex; flex-direction: column; gap: 1rem; position: sticky; top: 0; align-self: start; height: calc(100dvh - 69px); overflow-y: auto; border-right: 1px solid #e2e8f0; border-bottom: 0; padding: 1.25rem .75rem; }
+    .sidebar-nav { display: flex; flex-direction: column; flex-wrap: nowrap; margin-inline: 0; }
+    .sidebar-nav .nav-link { width: 100%; }
+    .sidebar-nav .nav-group-label, .sidebar-heading { display: flex; }
+    .sidebar-bottom { display: block; }
+    .sidebar-collapsed .app-shell { grid-template-columns: 5.5rem minmax(0, 1fr); }
+    .sidebar-collapsed .app-sidebar { padding-inline: .75rem; }
+    .sidebar-collapsed .sidebar-caption, .sidebar-collapsed .nav-caption { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    .sidebar-collapsed .sidebar-nav .nav-link, .sidebar-collapsed .sidebar-collapse { justify-content: center; padding-inline: .75rem; }
+    .sidebar-collapsed .sidebar-heading { justify-content: center; padding-inline: 0; }
+    .sidebar-collapsed .sidebar-collapse .ui-icon { transform: rotate(180deg); }
+}

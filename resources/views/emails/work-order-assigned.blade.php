@@ -6,6 +6,8 @@
     <title>Nueva orden de trabajo asignada — {{ $ticketCode }}</title>
     <style>
         body {
+            font-size: 18px;
+            overflow-wrap: anywhere;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             line-height: 1.6;
             color: #1e293b;
@@ -81,7 +83,7 @@
         }
         .detail-label {
             display: block;
-            font-size: 12px;
+            font-size: 16px;
             font-weight: 600;
             color: #64748b;
             text-transform: uppercase;
@@ -133,7 +135,7 @@
             border-top: 1px solid #e2e8f0;
             padding: 24px;
             text-align: center;
-            font-size: 13px;
+            font-size: 16px;
             color: #64748b;
         }
         .footer p {

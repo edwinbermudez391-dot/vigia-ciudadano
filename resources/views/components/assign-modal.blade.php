@@ -7,32 +7,34 @@
     $today = now()->toDateString();
 @endphp
 
-<div id="assign-modal" role="dialog" aria-modal="true" aria-labelledby="assign-title"
+<div id="assign-modal" role="dialog" aria-modal="true" aria-labelledby="assign-title" aria-describedby="assign-label assign-help"
      class="fixed inset-0 z-50 grid place-items-center p-4 {{ $reopen ? '' : 'hidden' }}">
     {{-- Fondo: clic fuera cierra (data-assign_close) --}}
-    <div class="absolute inset-0 bg-[#062e24]/40 backdrop-blur-sm" data-assign_close></div>
+    <div class="absolute inset-0 bg-slate-950/45" data-assign_close></div>
 
-    <form id="assign-form" method="POST"
+    <form id="assign-form" method="POST" data-confirm="¿Confirmas la asignación de este reporte al contratista y la fecha seleccionados?"
           action="{{ $reopen ? route('admin.assign', ['report' => old('report_id')]) : '' }}"
-          class="relative w-full max-w-md rounded-2xl border border-[#d5e8e0] bg-white p-6 text-[#062e24] shadow-2xl transition duration-200">
+          class="relative w-full max-w-2xl rounded-2xl border border-border bg-white p-6 sm:p-8 text-text-primary shadow-xl">
         @csrf
         <input type="hidden" name="report_id" value="{{ old('report_id') }}">
 
-        <div class="flex items-start justify-between gap-3">
+        <div class="dialog-heading">
             <div>
-                <h3 id="assign-title" class="text-base font-semibold">👷 Asignar Cuadrilla</h3>
+                <h2 id="assign-title" class="text-2xl font-semibold">Asignar contratista</h2>
                 <p id="assign-label" class="mt-1 font-mono text-xs text-[#5d7d70]">{{ old('report_label') }}</p>
             </div>
             <button type="button" data-assign_close aria-label="Cerrar"
-                    class="grid size-8 shrink-0 place-items-center rounded-lg text-[#5d7d70] transition duration-200 hover:bg-[#f0faf5] hover:text-[#062e24]">
+                    class="dialog-close">
                 ✕
             </button>
         </div>
 
-        <div class="mt-4 space-y-4">
+        <p id="assign-help" class="field-help mt-4">Selecciona la cuadrilla responsable y la fecha de atención. Revisa los datos antes de confirmar.</p>
+        <div class="mt-6 space-y-6">
             <div>
-                <label for="assign-contractor" class="mb-1.5 block text-sm font-medium">Cuadrilla / contratista</label>
-                <select id="assign-contractor" name="contractor_id" required
+                <label for="assign-contractor" class="field-label">Contratista responsable *</label>
+                <select id="assign-contractor" name="contractor_id" required aria-invalid="{{ $errors->has('contractor_id') ? 'true' : 'false' }}"
+                        @if ($errors->has('contractor_id')) aria-describedby="assign-contractor-error" @endif
                         class="w-full rounded-xl border border-[#b9daca] bg-[#fcfdfd] px-4 py-2.5 text-sm text-[#062e24] outline-none transition duration-200 focus:border-[#087b5f] focus:ring-2 focus:ring-[#087b5f]/20">
                     <option value="" disabled @selected(old('contractor_id') === null)>Selecciona una cuadrilla…</option>
                     @foreach ($contractors as $c)
@@ -41,38 +43,39 @@
                         </option>
                     @endforeach
                 </select>
-                @error('contractor_id') <p class="mt-1.5 text-xs text-rose-600">{{ $message }}</p> @enderror
+                <x-field-error field="contractor_id" id="assign-contractor-error" />
             </div>
 
             <div>
-                <label for="assign-date" class="mb-1.5 block text-sm font-medium">Fecha programada</label>
-                <input id="assign-date" name="scheduled_date" type="date" min="{{ $today }}"
+                <label for="assign-date" class="field-label">Fecha programada *</label>
+                <input id="assign-date" name="scheduled_date" type="date" min="{{ $today }}" aria-invalid="{{ $errors->has('scheduled_date') ? 'true' : 'false' }}"
+                       @if ($errors->has('scheduled_date')) aria-describedby="assign-date-error" @endif
                        value="{{ old('scheduled_date', $today) }}" required
                        class="w-full rounded-xl border border-[#b9daca] bg-[#fcfdfd] px-4 py-2.5 text-sm text-[#062e24] outline-none transition duration-200 focus:border-[#087b5f] focus:ring-2 focus:ring-[#087b5f]/20">
-                @error('scheduled_date') <p class="mt-1.5 text-xs text-rose-600">{{ $message }}</p> @enderror
+                <x-field-error field="scheduled_date" id="assign-date-error" />
             </div>
 
             <div>
-                <label for="assign-instructions" class="mb-1.5 block text-sm font-medium">
+                <label for="assign-instructions" class="field-label">
                     Instrucciones u observaciones <span class="text-xs font-normal text-[#5d7d70]">(opcional)</span>
                 </label>
                 <textarea id="assign-instructions" name="instructions" rows="3" maxlength="500"
                           placeholder="Alcance de la intervención, accesos, riesgos, horarios…"
                           class="w-full resize-none rounded-xl border border-[#b9daca] bg-[#fcfdfd] px-4 py-2.5 text-sm text-[#062e24] outline-none transition duration-200 placeholder:text-slate-400 focus:border-[#087b5f] focus:ring-2 focus:ring-[#087b5f]/20">{{ old('instructions') }}</textarea>
-                @error('instructions') <p class="mt-1.5 text-xs text-rose-600">{{ $message }}</p> @enderror
+                <x-field-error field="instructions" />
             </div>
 
             {{-- Solo para reabrir el modal en servidor tras validación fallida --}}
             <input type="hidden" name="report_label" value="{{ old('report_label') }}">
 
-            <div class="flex justify-end gap-2 pt-1">
+            <div class="form-actions">
                 <button type="button" data-assign_close
-                        class="bg-white hover:bg-[#f0faf5] text-[#062e24] border border-[#d5e8e0] font-semibold px-4 py-2.5 rounded-xl transition">
+                        class="btn-secondary">
                     Cancelar
                 </button>
                 <button type="submit"
-                        class="bg-[#087b5f] hover:bg-[#05664e] text-white font-bold px-4 py-2.5 rounded-xl shadow-sm transition active:scale-[0.98]">
-                    Despachar obra
+                        class="btn-primary">
+                    Confirmar asignación
                 </button>
             </div>
         </div>
