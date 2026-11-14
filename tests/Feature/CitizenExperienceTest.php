@@ -95,11 +95,45 @@ final class CitizenExperienceTest extends TestCase
         $this->from('/reportes/crear')->post('/reportes', [
             'category_id' => $category->id, 'title' => 'Hueco frente al parque',
             'description' => 'Hay un hueco que dificulta el paso.',
-        ])->assertRedirect('/reportes/crear')->assertSessionHasErrors(['latitude', 'longitude', 'damage_photo']);
+        ])->assertRedirect('/reportes/crear')->assertSessionHasErrors(['latitude', 'longitude']);
         $this->assertDatabaseCount('reports', 0);
         $this->get('/reportes/crear')->assertOk()->assertSee('Revisa la información que ingresaste')
-            ->assertSee('Hueco frente al parque')->assertSee('data-field-error="damage_photo"', false)
+            ->assertSee('Hay un hueco que dificulta el paso.')->assertSee('data-field-error="damage_photo"', false)
             ->assertDontSee('¡Tu reporte fue recibido!');
+    }
+
+    public function test_citizen_can_report_without_a_photo_or_contact_details(): void
+    {
+        Storage::fake('public');
+        $category = $this->category();
+        $response = $this->post('/reportes', [
+            'category_id' => $category->id,
+            'description' => 'Hay un hueco grande que dificulta el paso.',
+            'latitude' => 3.0095, 'longitude' => -76.4849,
+            'location_label' => 'Parque principal', 'address_reference' => 'Frente a la farmacia',
+        ]);
+        $response->assertSessionHasNoErrors();
+        $report = Report::sole();
+        $this->assertNull($report->damage_photo_url);
+        $this->assertSame('Parque principal · Frente a la farmacia', $report->address_reference);
+        $this->assertSame('Hay un hueco grande que dificulta el paso.', $report->title);
+        $this->assertSame([], Storage::disk('public')->allFiles());
+        $response->assertRedirect(route('reports.success', $report->ticket_code));
+        $this->get(route('reports.show', $report->ticket_code))->assertOk();
+    }
+
+    public function test_report_photos_use_the_current_site_in_public_and_staff_views(): void
+    {
+        $report = $this->report();
+        $path = '/reportes/'.$report->ticket_code;
+        $this->get('https://pruebas.example.test'.$path)->assertOk()
+            ->assertSee('src="/storage/reports/test.png"', false)
+            ->assertDontSee('http://localhost/storage', false);
+        $admin = User::factory()->create(['role' => UserRole::SuperAdmin]);
+        $this->actingAs($admin)->get('https://pruebas.example.test'.$path)->assertOk()
+            ->assertSee('src="/storage/reports/test.png"', false);
+        $this->get('https://pruebas.example.test/api/v1/reports/map-data')->assertOk()
+            ->assertJsonPath('data.0.photo_url', 'https://pruebas.example.test/storage/reports/test.png');
     }
 
     public function test_public_detail_does_not_render_names_contact_data_or_internal_notes(): void

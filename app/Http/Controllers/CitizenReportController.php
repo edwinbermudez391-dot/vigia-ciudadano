@@ -161,7 +161,7 @@ final class CitizenReportController extends Controller
 
         $photo = fn (?string $path): ?string => $path === null
             ? null
-            : \Illuminate\Support\Facades\Storage::disk('public')->url($path);
+            : url(\Illuminate\Support\Facades\Storage::disk('public')->url($path));
 
         $statusColors = [
             'reported' => '#eab308',       // Amarillo — Pendiente

@@ -8,8 +8,8 @@
 @section('content')
 <div class="citizen-content citizen-report-page">
     <header class="citizen-heading">
-        <h1>Reportar un problema</h1>
-        <p>No necesitas una cuenta. Los campos con * son obligatorios.</p>
+        <h1>Vamos a reportar un problema</h1>
+        <p>No necesitas una cuenta.</p>
     </header>
     <noscript><p class="citizen-notice">Puedes completar el formulario en esta página. Sin JavaScript, escribe las coordenadas del lugar en el paso 2.</p></noscript>
     @if ($errors->any())
@@ -17,7 +17,7 @@
             <h2>Revisa la información que ingresaste</h2>
             <ul>
                 @foreach ($errors->messages() as $field => $messages)
-                    <li><a href="#{{ $field === 'category_id' ? 'category-options' : $field }}">{{ match ($field) {
+                    <li><a href="#{{ match ($field) { 'category_id' => 'category-options', 'title' => 'description', default => $field } }}">{{ match ($field) {
                         'damage_photo' => 'Vuelve a elegir una foto JPEG, PNG o WebP de hasta 5 MB y 4000 × 4000 píxeles.',
                         'latitude', 'longitude' => 'Selecciona la ubicación del problema en el paso 2.',
                         default => $messages[0],
@@ -31,7 +31,7 @@
     <ol class="citizen-progress" aria-label="Pasos para enviar el reporte" data-report-progress hidden>
         <li aria-current="step"><span>1</span>El problema</li>
         <li><span>2</span>El lugar</li>
-        <li><span>3</span>Los detalles</li>
+        <li><span>3</span>Revisar y enviar</li>
     </ol>
     <p class="citizen-help" role="status" data-step-status hidden></p>
 
@@ -41,10 +41,10 @@
           data-detail-url="{{ url('/reportes') }}" data-can-subscribe="{{ auth()->check() ? 'true' : 'false' }}">
         @csrf
         <section class="citizen-card citizen-step" data-report-step="0" aria-labelledby="step-1-title">
-            <h2 id="step-1-title" tabindex="-1">1. ¿Qué problema quieres reportar?</h2>
-            <p id="category-help">Elige la opción que mejor describa el problema.</p>
+            <h2 id="step-1-title" tabindex="-1">1. ¿Qué pasó?</h2>
+            <p id="category-help">Elige un tipo de problema.</p>
             <fieldset id="category-options" tabindex="-1" aria-describedby="category-help category_id-error">
-                <legend class="sr-only">Tipo de problema *</legend>
+                <legend class="sr-only">Tipo de problema</legend>
                 @php
                     $commonNames = ['Baches y Malla Vial', 'Baches', 'Luminaria Apagada o en Falla', 'Fuga de Agua Potable', 'Basuras y Escombros en Vía Pública'];
                     $commonCategories = $categories->filter(fn ($category) => in_array($category->name, $commonNames, true));
@@ -55,7 +55,7 @@
                 @if ($categoryGroup->isNotEmpty())
                 @if ($groupIndex === 1)
                     <details class="citizen-other-categories" @if ($otherCategories->contains('id', (int) old('category_id'))) open @endif>
-                        <summary>Ver otros tipos de problema</summary>
+                        <summary>Otro problema</summary>
                 @endif
                 <div class="citizen-categories">
                     @foreach ($categoryGroup as $category)
@@ -80,6 +80,28 @@
                 <summary>Ver información de esta categoría</summary>
                 <p data-category-description></p><p data-category-responsible></p><p data-category-time></p>
             </details>
+            <div>
+                <label for="description">Cuéntanos qué pasa</label>
+                <textarea id="description" name="description" rows="4" required minlength="15" maxlength="1000" data-counter-textarea
+                          placeholder="Ej.: Hay un hueco grande frente a mi casa. Se llena de agua y dificulta el paso."
+                          aria-describedby="description-help description-error" aria-invalid="{{ $errors->has('description') ? 'true' : 'false' }}">{{ old('description') }}</textarea>
+                <p id="description-help" class="citizen-help">Sin nombres ni teléfonos. <span data-counter-output class="sr-only"></span></p>
+                <x-citizen-field-error field="description" />
+            </div>
+            <div>
+                <p id="photo-title" class="citizen-label">¿Quieres agregar una foto? (Opcional)</p>
+                <label for="damage_photo" class="citizen-photo-picker"><x-icon name="camera" /><span data-photo-label>Agregar foto</span>
+                    <input id="damage_photo" name="damage_photo" type="file" accept="image/jpeg,image/png,image/webp"
+                           class="sr-only" data-photo-input aria-describedby="photo-help damage_photo-error" aria-invalid="{{ $errors->has('damage_photo') ? 'true' : 'false' }}">
+                </label>
+                <button type="button" class="btn-secondary" data-photo-camera hidden><x-icon name="camera" />Tomar foto</button>
+                <button type="button" class="btn-secondary" data-remove-photo hidden>Quitar foto</button>
+                <p class="citizen-help" role="status" data-photo-status></p>
+                <p id="photo-help" class="citizen-help">Evita rostros y datos personales.</p>
+                <img data-photo-preview class="citizen-photo-preview" alt="Vista previa de la foto que enviarás" hidden>
+                <x-citizen-field-error field="damage_photo" />
+            </div>
+            <details><summary>¿Necesitas ayuda?</summary><p>Elige el problema y cuenta qué ocurre. Puedes continuar sin foto.</p></details>
             <div class="citizen-step-actions" data-step-actions hidden>
                 <button type="button" class="btn-primary" data-step-next @disabled($categories->isEmpty())>Continuar<x-icon name="arrow" /></button>
             </div>
@@ -87,18 +109,28 @@
 
         <section class="citizen-card citizen-step" data-report-step="1" aria-labelledby="step-2-title">
             <h2 id="step-2-title" tabindex="-1">2. ¿Dónde está el problema?</h2>
-            <p>No tienes que activar el GPS. También puedes buscar la dirección o señalar el lugar en el mapa.</p>
-            <button type="button" class="btn-secondary" data-geolocate hidden><x-icon name="map" /><span>Usar mi ubicación</span></button>
-            <div class="citizen-location-search" data-address-search hidden>
-                <label for="address-search">Escribe la dirección y el municipio</label>
+            <p>¿El problema está donde estás ahora?</p>
+            <input type="hidden" name="location_label" value="{{ old('location_label') }}" data-selected-place>
+            <button type="button" class="btn-secondary" data-geolocate hidden><x-icon name="map" /><span>Sí, usar mi ubicación</span></button>
+            <button type="button" class="btn-secondary" data-choose-address hidden aria-expanded="false" aria-controls="address-panel">No, buscar dirección</button>
+            <div id="address-panel" class="citizen-location-search" data-address-search hidden>
+                <label for="address-search">Busca una dirección o un lugar conocido</label>
                 <div class="citizen-lookup-controls">
-                    <input id="address-search" type="search" maxlength="255" placeholder="Ej.: Calle 5 con Carrera 4, Santander de Quilichao" aria-describedby="address-privacy location-status">
+                    <input id="address-search" type="search" maxlength="255" placeholder="Ej.: Parque principal, Santander de Quilichao" aria-describedby="address-privacy location-status">
                     <button type="button" class="btn-secondary" data-find-address>Buscar dirección</button>
                 </div>
-                <p id="address-privacy" class="citizen-help">Al buscar, se envía solo esta dirección a OpenStreetMap. No escribas nombres ni teléfonos.</p>
+                <details><summary>Ayuda para buscar</summary><p id="address-privacy" class="citizen-help">Incluye calle, barrio y municipio. La dirección se busca en OpenStreetMap; no escribas nombres ni teléfonos.</p></details>
                 <ul class="citizen-address-results" data-address-results aria-label="Direcciones encontradas"></ul>
             </div>
-            <p id="location-status" class="citizen-notice" role="status" data-location-status>Falta elegir el lugar del problema.</p>
+            <p id="location-status" class="citizen-notice" role="status" data-location-status>Elige una opción para ubicar el problema.</p>
+            <div class="citizen-notice" data-location-confirmation hidden>
+                <p data-location-label></p>
+                <h3>¿El problema está aquí?</h3>
+                <div class="citizen-actions">
+                    <button type="button" class="btn-primary" data-confirm-location>Sí, este es el lugar</button>
+                    <button type="button" class="btn-secondary" data-change-location>Cambiar lugar</button>
+                </div>
+            </div>
             <details class="citizen-map-section" data-map-section hidden>
                 <summary>Señalar el lugar en el mapa</summary>
                 <p id="map-help" class="citizen-help">Toca o haz clic en el lugar. Con el teclado, mueve el mapa con las flechas y usa «Elegir el centro del mapa» para seleccionar el punto azul.</p>
@@ -106,24 +138,24 @@
                 <button type="button" class="btn-secondary" data-use-map-center>Elegir el centro del mapa</button>
             </details>
             <div>
-                <label for="address_reference">Dirección o punto de referencia (opcional)</label>
+                <label for="address_reference">¿Qué hay cerca? (Opcional)</label>
                 <input id="address_reference" name="address_reference" type="text" value="{{ old('address_reference') }}" maxlength="255"
                        placeholder="Ej.: frente al parque, junto a la tienda" autocomplete="street-address"
                        aria-describedby="address_reference-error" aria-invalid="{{ $errors->has('address_reference') ? 'true' : 'false' }}">
                 <x-citizen-field-error field="address_reference" />
             </div>
             <details class="citizen-coordinates" data-coordinates open>
-                <summary>Escribir coordenadas si ya las conoces</summary>
+                <summary>Más opciones de ubicación</summary>
                 <p class="citizen-help">Si buscas la dirección, eliges el mapa o usas tu ubicación, estos datos se completan solos.</p>
                 <div class="citizen-fields">
                     <div>
-                        <label for="latitude">Latitud *</label>
+                        <label for="latitude">Latitud</label>
                         <input id="latitude" name="latitude" type="number" step="any" min="-90" max="90" value="{{ old('latitude') }}" data-lat-input required
                                aria-describedby="latitude-error" aria-invalid="{{ $errors->has('latitude') ? 'true' : 'false' }}">
                         <x-citizen-field-error field="latitude" />
                     </div>
                     <div>
-                        <label for="longitude">Longitud *</label>
+                        <label for="longitude">Longitud</label>
                         <input id="longitude" name="longitude" type="number" step="any" min="-180" max="180" value="{{ old('longitude') }}" data-lng-input required
                                aria-describedby="longitude-error" aria-invalid="{{ $errors->has('longitude') ? 'true' : 'false' }}">
                         <x-citizen-field-error field="longitude" />
@@ -137,35 +169,17 @@
         </section>
 
         <section class="citizen-card citizen-step" data-report-step="2" aria-labelledby="step-3-title">
-            <h2 id="step-3-title" tabindex="-1">3. Cuéntanos qué pasó</h2>
-            <div>
-                <label for="title">El problema en pocas palabras *</label>
-                <input id="title" name="title" type="text" value="{{ old('title') }}" required minlength="5" maxlength="150"
-                       placeholder="Ej.: Hueco grande frente a mi casa" aria-describedby="title-help title-error" aria-invalid="{{ $errors->has('title') ? 'true' : 'false' }}">
-                <p id="title-help" class="citizen-help">Entre 5 y 150 caracteres.</p><x-citizen-field-error field="title" />
-            </div>
-            <div>
-                <label for="description">¿Qué pasó y a quién afecta? *</label>
-                <textarea id="description" name="description" rows="4" required minlength="15" maxlength="1000" data-counter-textarea
-                          placeholder="Ej.: Hay un hueco grande frente a mi casa. Se llena de agua y dificulta el paso."
-                          aria-describedby="description-help description-error" aria-invalid="{{ $errors->has('description') ? 'true' : 'false' }}">{{ old('description') }}</textarea>
-                <p id="description-help" class="citizen-help">Entre 15 y 1000 caracteres. No incluyas datos personales. <span data-counter-output></span></p>
-                <x-citizen-field-error field="description" />
-            </div>
-            <div>
-                <p id="photo-title" class="citizen-label">Foto del problema *</p>
-                <label for="damage_photo" class="citizen-photo-picker"><x-icon name="camera" /><span data-photo-label>Agregar foto</span>
-                    <input id="damage_photo" name="damage_photo" type="file" accept="image/jpeg,image/png,image/webp"
-                           class="sr-only" data-photo-input required aria-describedby="photo-help damage_photo-error" aria-invalid="{{ $errors->has('damage_photo') ? 'true' : 'false' }}">
-                </label>
-                <button type="button" class="btn-secondary" data-photo-camera hidden><x-icon name="camera" />Tomar foto</button>
-                <p id="photo-help" class="citizen-help">Puedes tomar una foto o elegir una guardada. JPEG, PNG o WebP; máximo 5 MB y 4000 × 4000 píxeles. Evita rostros y datos personales.</p>
-                <img data-photo-preview class="citizen-photo-preview" alt="Vista previa de la foto que enviarás" hidden>
-                <x-citizen-field-error field="damage_photo" />
-            </div>
+            <h2 id="step-3-title" tabindex="-1">3. Revisa y envía tu reporte</h2>
+            <p>Comprueba los datos. Puedes corregirlos antes de enviar.</p>
+            <dl class="citizen-summary" data-report-review>
+                <div><dt>Problema</dt><dd data-review-category></dd><button type="button" class="btn-secondary" data-edit-step="0" hidden>Cambiar problema</button></div>
+                <div><dt>Descripción</dt><dd data-review-description></dd></div>
+                <div><dt>Lugar</dt><dd data-review-location></dd><button type="button" class="btn-secondary" data-edit-step="1" hidden>Cambiar lugar</button></div>
+            </dl>
+            <img data-review-photo class="citizen-photo-preview" alt="Foto del problema que vas a enviar" hidden>
             <details class="citizen-contact" @if ($errors->hasAny(['citizen_name', 'citizen_phone', 'citizen_email'])) open @endif>
-                <summary>¿Quieres recibir noticias del reporte? (Opcional)</summary>
-                <p class="citizen-help">Deja tu correo para recibir actualizaciones. Puedes enviar el reporte sin completar estos datos. No se mostrarán en la consulta pública.</p>
+                <summary>Recibir novedades por correo (opcional)</summary>
+                <p class="citizen-help">Estos datos son opcionales y privados.</p>
                 <div class="citizen-fields">
                     <div><label for="citizen_name">Nombre (opcional)</label><input id="citizen_name" name="citizen_name" type="text" maxlength="120" value="{{ old('citizen_name') }}" autocomplete="name" aria-describedby="citizen_name-error" aria-invalid="{{ $errors->has('citizen_name') ? 'true' : 'false' }}"><x-citizen-field-error field="citizen_name" /></div>
                     <div><label for="citizen_phone">Teléfono (opcional)</label><input id="citizen_phone" name="citizen_phone" type="tel" maxlength="25" value="{{ old('citizen_phone') }}" autocomplete="tel" aria-describedby="citizen_phone-error" aria-invalid="{{ $errors->has('citizen_phone') ? 'true' : 'false' }}"><x-citizen-field-error field="citizen_phone" /></div>
@@ -178,7 +192,7 @@
                 <ul class="citizen-address-results" data-duplicates-list hidden></ul>
                 <p class="citizen-help">Puedes consultar uno existente o enviar este reporte si es un problema diferente.</p>
             </div>
-            <p class="citizen-help">Al enviar, recibirás un número para consultar la solución. Revisa la foto y la ubicación antes de continuar.</p>
+            <p class="citizen-help">Recibirás un número para consultar tu reporte.</p>
             <p class="citizen-error" role="alert" data-submit-error hidden></p>
             <div class="citizen-step-actions">
                 <button type="button" class="btn-secondary" data-step-previous hidden>Anterior</button>

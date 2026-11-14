@@ -53,10 +53,15 @@ final class StoreReportRequest extends FormRequest
             'latitude',
             'longitude',
             'address_reference',
+            'location_label',
             'citizen_name',
             'citizen_phone',
             'citizen_email',
         ])));
+        if ($this->routeIs('reports.store')) {
+            // El ciudadano escribe una sola descripción; el título se deriva en el servidor.
+            $this->merge(['title' => mb_substr(trim((string) $this->input('description')), 0, 150)]);
+        }
     }
 
     /**
@@ -73,8 +78,9 @@ final class StoreReportRequest extends FormRequest
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
             'address_reference' => ['nullable', 'string', 'max:255'],
+            'location_label' => ['nullable', 'string', 'max:255'],
             'damage_photo' => [
-                'required',
+                $this->routeIs('reports.store') ? 'nullable' : 'required',
                 'image',
                 'mimes:jpeg,png,webp',
                 'max:5120',

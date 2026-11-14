@@ -50,12 +50,16 @@ final class ReportController extends Controller
 
     public function store(StoreReportRequest $request): RedirectResponse
     {
-        /** @var UploadedFile $photo */
+        /** @var UploadedFile|null $photo */
         $photo = $request->validated('damage_photo');
 
         // Si el usuario está autenticado, vincula el reporte a su cuenta.
         // Si es invitado, user_id será null y se guardan los datos de contacto.
-        $report = $this->intake->create($request->validated(), $photo, $request->user());
+        $data = $request->validated();
+        $data['address_reference'] = mb_substr(implode(' · ', array_filter([
+            $data['location_label'] ?? '', $data['address_reference'] ?? '',
+        ])), 0, 255);
+        $report = $this->intake->create($data, $photo, $request->user());
 
         // Redirige a la vista de éxito con el ticket en sesión flash.
         return redirect()

@@ -38,7 +38,7 @@ final class ReportIntake
      *
      * @throws UniqueConstraintViolationException tras agotar los reintentos
      */
-    public function create(array $data, UploadedFile $photo, ?User $author): Report
+    public function create(array $data, ?UploadedFile $photo, ?User $author): Report
     {
         // Retry acotado: bajo concurrencia extrema dos tickets pueden chocar
         // contra el UNIQUE de ticket_code; reintenta con el siguiente correlativo.
@@ -57,14 +57,14 @@ final class ReportIntake
      * Foto + inserción en una transacción con compensación del archivo:
      * el filesystem no participa del rollback.
      */
-    private function persist(array $data, UploadedFile $photo, ?User $author): Report
+    private function persist(array $data, ?UploadedFile $photo, ?User $author): Report
     {
         return DB::transaction(function () use ($data, $photo, $author): Report {
             $ticketCode = $this->tickets->next();
 
             // Nombre en disco derivado del ticket (único garantizado),
             // nunca del nombre enviado por el cliente.
-            $photoPath = $this->uploader->upload($photo, self::PHOTO_FOLDER, $ticketCode);
+            $photoPath = $photo ? $this->uploader->upload($photo, self::PHOTO_FOLDER, $ticketCode) : null;
 
             try {
                 return Report::create([
@@ -83,7 +83,7 @@ final class ReportIntake
                     'status' => ReportStatus::Reported->value,
                 ]);
             } catch (Throwable $e) {
-                $this->uploader->delete($photoPath);
+                if ($photoPath !== null) $this->uploader->delete($photoPath);
 
                 throw $e;
             }

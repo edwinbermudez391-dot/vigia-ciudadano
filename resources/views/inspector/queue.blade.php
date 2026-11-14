@@ -16,7 +16,7 @@
         <article class="work-card" data-search-item>
             <div class="work-card-head"><div><a class="report-meta font-semibold underline underline-offset-4" href="{{ route('reports.show', $report->ticket_code) }}">{{ $report->ticket_code }}</a><h2>{{ $report->title }}</h2><p class="report-meta">{{ $report->category->name }} · {{ $order->contractor->name ?? 'Sin contratista' }}</p></div><x-status-badge :status="$report->status" /></div>
             <div class="inspection-evidence mt-6">
-                <x-photo-card label="Daño reportado" :url="$storage->url($report->damage_photo_url)">Evidencia ciudadana original</x-photo-card>
+                <x-photo-card label="Daño reportado" :url="$report->damage_photo_url ? $storage->url($report->damage_photo_url) : null">Evidencia ciudadana original</x-photo-card>
                 <x-photo-card label="Solución entregada" :url="$order->solution_photo_url ? $storage->url($order->solution_photo_url) : null">Reparación registrada por el contratista</x-photo-card>
             </div>
             @if ($previous)<p class="notice border-amber-200 bg-amber-50 text-amber-900 mt-6">Esta obra ya tuvo {{ $order->qualityInspections->count() }} inspección(es). Revisa las correcciones antes de emitir una nueva decisión.</p>@endif

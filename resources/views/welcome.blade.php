@@ -406,51 +406,41 @@
     </main>
     {{-- ============================ FOOTER ============================ --}}
     <footer class="bg-[#041c16] text-slate-300">
-        <div class="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:grid-cols-2 lg:grid-cols-4">
-            <div>
-                <div class="flex items-center gap-2.5">
-                    <span class="grid size-9 place-items-center rounded-xl bg-white/10 overflow-hidden">
-                        <img src="{{ asset('imagenes/logo-vigia.png') }}" alt="Logo Vigía Ciudadano" class="h-full w-auto object-contain">
-                    </span>
-                    <span class="text-sm font-semibold text-white">Vigía Ciudadano</span>
-                </div>
-                <p class="mt-4 text-sm leading-relaxed text-slate-400">
-                    Gestión ciudadana para una comunidad mejor atendida.
-                </p>
+        <div class="mx-auto grid max-w-6xl gap-4 px-4 py-6 sm:grid-cols-2">
+            <div class="flex items-center gap-2.5">
+                <span class="grid size-9 place-items-center rounded-xl bg-white/10 overflow-hidden">
+                    <img src="{{ asset('imagenes/logo-vigia.png') }}" alt="" class="h-full w-auto object-contain">
+                </span>
+                <span class="text-sm font-semibold text-white">Vigía Ciudadano</span>
             </div>
 
-            <nav aria-label="Enlaces informativos">
-                <h4 class="text-sm font-semibold text-white">Navegación</h4>
-                <ul class="mt-4 space-y-2.5 text-sm text-slate-400">
-                    <li><a href="#como-funciona" class="transition duration-200 hover:text-emerald-300">Cómo funciona</a></li>
-                    <li><a href="#transparencia" class="transition duration-200 hover:text-emerald-300">Transparencia</a></li>
-                    <li><a href="#metricas" class="transition duration-200 hover:text-emerald-300">Métricas de gestión</a></li>
-                    <li><a href="#participa" class="transition duration-200 hover:text-emerald-300">Participa</a></li>
-                    <li><a href="{{ route('login') }}" class="transition duration-200 hover:text-emerald-300">Iniciar sesión</a></li>
+            <details>
+                <summary class="min-h-12 py-3 font-semibold text-white">Enlaces y acceso</summary>
+                <nav aria-label="Enlaces informativos">
+                    <ul class="space-y-1 text-sm">
+                        <li><a href="#como-funciona" class="inline-flex min-h-12 items-center underline">Cómo funciona</a></li>
+                        <li><a href="#transparencia" class="inline-flex min-h-12 items-center underline">Transparencia</a></li>
+                        <li><a href="#metricas" class="inline-flex min-h-12 items-center underline">Métricas de gestión</a></li>
+                        <li><a href="#participa" class="inline-flex min-h-12 items-center underline">Participa</a></li>
+                        <li><a href="{{ route('login') }}" class="inline-flex min-h-12 items-center underline">Iniciar sesión</a></li>
+                    </ul>
+                </nav>
+            </details>
+
+            <details>
+                <summary class="min-h-12 py-3 font-semibold text-white">Contacto y atención</summary>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="mailto:contacto@vigiaciudadano.gov.co" class="inline-flex min-h-12 items-center underline">contacto@vigiaciudadano.gov.co</a></li>
+                    <li><a href="tel:+576015550148" class="inline-flex min-h-12 items-center underline">PQRSD: (601) 555 0148</a></li>
+                    <li>Lunes a viernes, 8:00–17:00</li>
+                    <li>Alcaldía Municipal, piso 2</li>
                 </ul>
-            </nav>
+            </details>
 
-            <div>
-                <h4 class="text-sm font-semibold text-white">Canales oficiales</h4>
-                <ul class="mt-4 space-y-2.5 text-sm text-slate-400">
-                    <li>✉️ contacto@vigiaciudadano.gov.co</li>
-                    <li>📞 Línea PQRSD: (601) 555 0148</li>
-                    <li>🕗 Atención: lunes a viernes, 8:00 – 17:00</li>
-                    <li>🏛️ Ventanilla única: Alcaldía Municipal, piso 2</li>
-                </ul>
-            </div>
-
-            <div>
-                <h4 class="text-sm font-semibold text-white">Aviso de veeduría</h4>
-                <p class="mt-4 text-sm leading-relaxed text-slate-400">
-                    Los expedientes de incidencias, órdenes de trabajo y dictámenes de calidad son <b class="font-semibold text-emerald-300">información pública</b>
-                    en los términos de la ley de transparencia. Su difusión y auditoría ciudadana es el propósito central de este programa.
-                </p>
-            </div>
+            <p class="text-sm leading-relaxed">Reportes y seguimiento abiertos a la ciudadanía.</p>
         </div>
-
-        <div class="border-t border-white/10 py-5 text-center text-xs text-slate-500">
-            © {{ date('Y') }} Vigía Ciudadano · La obra pública, vigilada por todos.
+        <div class="border-t border-white/10 px-4 py-3 text-center text-xs text-slate-500">
+            © {{ date('Y') }} Vigía Ciudadano
         </div>
     </footer>
 

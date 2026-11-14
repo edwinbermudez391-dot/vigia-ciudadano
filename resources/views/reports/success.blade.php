@@ -9,6 +9,7 @@
         <div class="citizen-ticket"><p>Número de reporte (radicado)</p><p id="ticket-code" class="citizen-number" tabindex="0">{{ $report->ticket_code }}</p></div>
         <div class="citizen-actions citizen-no-print">
             <button type="button" id="copy-ticket" class="btn-secondary" data-copy-ticket hidden><x-icon name="copy" />Copiar número</button>
+            <button type="button" class="btn-secondary" data-share-receipt data-url="{{ route('reports.show', $report->ticket_code) }}" hidden>Compartir comprobante</button>
             <a href="{{ route('reports.show', $report->ticket_code) }}" class="btn-primary"><x-icon name="search" />Consultar mi reporte</a>
             <button type="button" class="btn-secondary" data-print-receipt hidden><x-icon name="printer" />Imprimir comprobante</button>
         </div>

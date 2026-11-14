@@ -1,3 +1,5 @@
+import { prepareReportPhoto } from './report-photo';
+
 export function initCitizenReport(form) {
     if (!form) return;
     const steps = [...form.querySelectorAll('[data-report-step]')];
@@ -13,11 +15,18 @@ export function initCitizenReport(form) {
     let marker = null;
     let photoUrl = null;
     let photoProblem = '';
+    let preparingPhoto = false;
+    let photoVersion = 0;
     let submitting = false;
     let nearbyController = null;
     let nearbyTimer = null;
     let addressController = null;
     let pointVersion = 0;
+    let confirmedVersion = -1;
+    let locationLabel = form.querySelector('[data-selected-place]').value;
+    let choosingLocation = false;
+    const confirmation = form.querySelector('[data-location-confirmation]');
+    const confirmLocation = form.querySelector('[data-confirm-location]');
 
     function revealAncestors(element) {
         let parent = element.parentElement;
@@ -27,15 +36,27 @@ export function initCitizenReport(form) {
         }
     }
     function showStep(index, focus = true) {
+        if (index === 2) updateReview();
         currentStep = index;
         steps.forEach((step, i) => { step.hidden = i !== index; });
         [...progress.children].forEach((item, i) => {
             if (i === index) item.setAttribute('aria-current', 'step');
             else item.removeAttribute('aria-current');
         });
-        stepStatus.textContent = `Paso ${index + 1} de ${steps.length}. Tus datos se conservan al usar Anterior.`;
+        stepStatus.textContent = `Paso ${index + 1} de ${steps.length}`;
         if (index === 1) requestAnimationFrame(initMap);
         if (focus) steps[index].querySelector('h2').focus();
+    }
+    function updateReview() {
+        const selected = form.querySelector('[data-category]:checked');
+        form.querySelector('[data-review-category]').textContent = selected?.closest('label').querySelector('strong')?.textContent || 'Sin elegir';
+        form.querySelector('[data-review-description]').textContent = form.querySelector('#description').value;
+        const reference = form.querySelector('#address_reference').value.trim();
+        form.querySelector('[data-review-location]').textContent = [locationLabel, reference].filter(Boolean).join(' · ');
+        const image = form.querySelector('[data-review-photo]');
+        image.hidden = !photoUrl || Boolean(photoProblem);
+        if (!image.hidden) image.src = photoUrl;
+        else image.removeAttribute('src');
     }
     function errorFor(field, message) {
         const error = form.querySelector(`[data-field-error="${field.name}"]`);
@@ -44,6 +65,7 @@ export function initCitizenReport(form) {
         controls.forEach((control) => control.setAttribute('aria-invalid', String(Boolean(message))));
     }
     function validationMessage(field) {
+        if (field === photoInput && preparingPhoto) return 'Estamos preparando la foto. Espera un momento.';
         if (field === photoInput && photoProblem) return photoProblem;
         if (['title', 'description'].includes(field.name) && field.value.trim().length < field.minLength) {
             return field.value.trim() ? `Escribe al menos ${field.minLength} caracteres.` : (field.name === 'title' ? 'Escribe el problema en pocas palabras.' : 'Cuéntanos qué pasó antes de enviar.');
@@ -73,12 +95,20 @@ export function initCitizenReport(form) {
             errorFor(field, message);
             if (message && !firstInvalid) firstInvalid = field;
         });
+        if (!firstInvalid && index === 1 && (choosingLocation || confirmedVersion !== pointVersion)) {
+            showStep(1, false);
+            locationStatus.textContent = choosingLocation ? 'Busca y elige el nuevo lugar del problema.' : 'Comprueba el punto en el mapa y confirma si el problema está ahí.';
+            if (choosingLocation) form.querySelector('#address-search').focus();
+            else confirmLocation.focus();
+            return false;
+        }
         if (!firstInvalid) return true;
         showStep(index, false);
         if (['latitude', 'longitude'].includes(firstInvalid.name) && !coordinates.open) {
             locationStatus.textContent = 'Falta elegir el lugar. Busca la dirección y elige un resultado, señala el mapa o escribe las coordenadas si las conoces.';
             locationStatus.classList.add('citizen-error');
             const search = form.querySelector('#address-search');
+            chooseAddress();
             search.setAttribute('aria-invalid', 'true');
             search.focus();
             return false;
@@ -89,10 +119,38 @@ export function initCitizenReport(form) {
     }
 
     form.noValidate = true;
+    const firstContinue = steps[0].querySelector('[data-step-next]');
+    firstContinue.textContent = photoInput.files?.length ? 'Continuar' : 'Continuar sin foto';
+    form.querySelectorAll('[data-edit-step]').forEach((button) => {
+        button.hidden = false;
+        button.addEventListener('click', () => showStep(Number(button.dataset.editStep)));
+    });
+    function chooseAddress() {
+        pointVersion++;
+        choosingLocation = true;
+        confirmation.hidden = true;
+        form.querySelector('[data-address-search]').hidden = false;
+        form.querySelector('[data-choose-address]').setAttribute('aria-expanded', 'true');
+    }
+    form.querySelector('[data-choose-address]').addEventListener('click', () => {
+        chooseAddress();
+        form.querySelector('#address-search').focus();
+    });
+    confirmLocation.addEventListener('click', () => {
+        if (choosingLocation || !latInput.value || !lngInput.value || !validPoint(Number(latInput.value), Number(lngInput.value))) return;
+        confirmedVersion = pointVersion;
+        locationStatus.textContent = 'Lugar confirmado. Puedes continuar.';
+        confirmLocation.textContent = 'Lugar confirmado';
+        steps[1].querySelector('[data-step-next]').focus();
+    });
+    form.querySelector('[data-change-location]').addEventListener('click', () => {
+        chooseAddress();
+        form.querySelector('#address-search').focus();
+    });
     progress.hidden = false;
     stepStatus.hidden = false;
     coordinates.open = Boolean(form.querySelector('#latitude-error:not([hidden]), #longitude-error:not([hidden])'));
-    form.querySelectorAll('[data-step-actions], [data-step-previous], [data-geolocate], [data-address-search]').forEach((element) => { element.hidden = false; });
+    form.querySelectorAll('[data-step-actions], [data-step-previous], [data-geolocate], [data-choose-address]').forEach((element) => { element.hidden = false; });
     form.querySelectorAll('[data-step-next]').forEach((button) => button.addEventListener('click', () => {
         if (validateStep(currentStep)) showStep(currentStep + 1);
     }));
@@ -123,9 +181,19 @@ export function initCitizenReport(form) {
     function validPoint(lat, lng) {
         return Number.isFinite(lat) && lat >= -90 && lat <= 90 && Number.isFinite(lng) && lng >= -180 && lng <= 180;
     }
-    function setPoint(lat, lng, message, pan = true) {
+    function setPoint(lat, lng, message, pan = true, label = 'Punto elegido en el mapa') {
         if (!validPoint(lat, lng)) return;
         pointVersion++;
+        choosingLocation = false;
+        confirmedVersion = -1;
+        locationLabel = label;
+        form.querySelector('[data-selected-place]').value = label.slice(0, 255);
+        confirmation.hidden = false;
+        form.querySelector('[data-location-label]').textContent = label;
+        confirmLocation.textContent = 'Sí, este es el lugar';
+        const mapSection = form.querySelector('[data-map-section]');
+        mapSection.hidden = false;
+        mapSection.open = true;
         latInput.value = lat.toFixed(6);
         lngInput.value = lng.toFixed(6);
         errorFor(latInput, ''); errorFor(lngInput, '');
@@ -140,6 +208,7 @@ export function initCitizenReport(form) {
             if (pan) map.setView([lat, lng], 17);
         }
         scheduleNearby();
+        if (map) requestAnimationFrame(() => map.invalidateSize());
     }
     function initMap() {
         if (map) { map.invalidateSize(); return; }
@@ -154,7 +223,7 @@ export function initCitizenReport(form) {
         window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
         map.on('click', (event) => setPoint(event.latlng.lat, event.latlng.lng, 'Lugar elegido en el mapa. Puedes continuar.', false));
         if (latInput.value !== '' && lngInput.value !== '' && validPoint(Number(latInput.value), Number(lngInput.value))) {
-            setPoint(Number(latInput.value), Number(lngInput.value), 'Conservamos la ubicación que elegiste.');
+            setPoint(Number(latInput.value), Number(lngInput.value), 'Comprueba el lugar que elegiste.', true, locationLabel || 'Lugar conservado del formulario');
         }
         requestAnimationFrame(() => map.invalidateSize());
     }
@@ -169,23 +238,60 @@ export function initCitizenReport(form) {
     [latInput, lngInput].forEach((input) => input.addEventListener('input', () => {
         const lat = Number(latInput.value), lng = Number(lngInput.value);
         if (latInput.value !== '' && lngInput.value !== '' && validPoint(lat, lng)) setPoint(lat, lng, 'Coordenadas guardadas. Comprueba que corresponden al problema.', false);
-        else { pointVersion++; nearbyController?.abort(); form.querySelector('[data-duplicate-banner]').hidden = true; locationStatus.textContent = 'Falta completar una ubicación válida.'; }
+        else { pointVersion++; confirmation.hidden = true; nearbyController?.abort(); form.querySelector('[data-duplicate-banner]').hidden = true; locationStatus.textContent = 'Falta completar una ubicación válida.'; }
     }));
 
     const geoButton = form.querySelector('[data-geolocate]');
     geoButton.addEventListener('click', () => {
-        if (!navigator.geolocation) { locationStatus.textContent = 'Este navegador no puede obtener tu ubicación. Busca la dirección o señala el lugar en el mapa.'; return; }
+        if (!window.isSecureContext) {
+            locationStatus.textContent = 'Para usar el GPS, abre la página desde el enlace HTTPS de Cloudflare.';
+            return;
+        }
+        if (!navigator.geolocation) {
+            locationStatus.textContent = 'Este navegador no permite usar el GPS. Abre el enlace en Chrome o Safari.';
+            return;
+        }
+        pointVersion++;
         const requestedAt = pointVersion;
+        addressController?.abort();
+        form.querySelector('[data-address-results]').replaceChildren();
+        confirmation.hidden = true;
+        choosingLocation = true;
         geoButton.disabled = true;
-        locationStatus.textContent = 'Buscando tu ubicación. Puedes elegir otro método si lo prefieres.';
-        navigator.geolocation.getCurrentPosition((position) => {
+        form.querySelector('[data-address-search]').hidden = true;
+        form.querySelector('[data-choose-address]').setAttribute('aria-expanded', 'false');
+        locationStatus.textContent = 'Buscando tu ubicación… Si el celular pide permiso, toca «Permitir».';
+        const success = (position) => {
             geoButton.disabled = false;
             if (requestedAt !== pointVersion) return;
-            setPoint(position.coords.latitude, position.coords.longitude, 'Ubicación obtenida. Comprueba en el mapa que el problema está aquí.');
-        }, () => {
+            const { latitude, longitude, accuracy } = position.coords;
+            if (!validPoint(latitude, longitude)) { failure({ code: 2 }, false); return; }
+            setPoint(latitude, longitude, 'Encontramos tu ubicación. Puedes continuar sin escribir una dirección.', true, 'Tu ubicación actual (GPS)');
+            confirmedVersion = pointVersion;
+            confirmLocation.textContent = 'Lugar confirmado';
+            if (Number.isFinite(accuracy) && accuracy > 100) {
+                locationStatus.textContent = `Encontramos tu ubicación aproximada (margen de ${Math.round(accuracy)} metros). Revisa el punto en el mapa antes de continuar.`;
+                confirmedVersion = -1;
+                confirmLocation.textContent = 'Sí, este es el lugar';
+            }
+        };
+        const failure = (error, retry = true) => {
+            if (requestedAt !== pointVersion) { geoButton.disabled = false; return; }
+            if (error.code !== 1 && retry) {
+                locationStatus.textContent = 'El GPS está tardando. Estamos intentando otra forma de obtener tu ubicación…';
+                navigator.geolocation.getCurrentPosition(success, error => failure(error, false), {
+                    enableHighAccuracy: false, timeout: 15000, maximumAge: 60000,
+                });
+                return;
+            }
             geoButton.disabled = false;
-            if (requestedAt === pointVersion) locationStatus.textContent = 'No pudimos acceder a tu ubicación. Puedes escribir la dirección y buscarla o señalar el lugar en el mapa.';
-        }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 });
+            locationStatus.textContent = error.code === 1
+                ? 'El permiso de ubicación está bloqueado. En los permisos de este sitio, permite la ubicación y vuelve a tocar «Usar mi ubicación».'
+                : error.code === 3
+                    ? 'El celular no respondió a tiempo. Activa la ubicación del teléfono y toca de nuevo «Usar mi ubicación».'
+                    : 'No hay señal de ubicación disponible. Comprueba que la ubicación del teléfono esté activada y vuelve a intentarlo.';
+        };
+        navigator.geolocation.getCurrentPosition(success, failure, { enableHighAccuracy: true, timeout: 20000, maximumAge: 15000 });
     });
 
     const addressButton = form.querySelector('[data-find-address]');
@@ -195,16 +301,19 @@ export function initCitizenReport(form) {
         const results = form.querySelector('[data-address-results]');
         results.replaceChildren();
         if (query.length < 5) { locationStatus.textContent = 'Escribe la dirección y el municipio para buscar el lugar.'; addressInput.focus(); return; }
+        chooseAddress();
+        const requestedAt = pointVersion;
         addressController?.abort();
         addressController = new AbortController();
         addressButton.disabled = true;
         locationStatus.textContent = 'Buscando la dirección…';
         try {
             const url = new URL('https://nominatim.openstreetmap.org/search');
-            url.search = new URLSearchParams({ format: 'jsonv2', q: query, limit: '5', 'accept-language': 'es' });
+            url.search = new URLSearchParams({ format: 'jsonv2', q: query, limit: '3', 'accept-language': 'es' });
             const response = await fetch(url, { signal: addressController.signal, credentials: 'omit', headers: { Accept: 'application/json' } });
             if (!response.ok) throw new Error('address-service-unavailable');
             const data = await response.json();
+            if (requestedAt !== pointVersion) return;
             const matches = Array.isArray(data) ? data.filter((item) => typeof item.display_name === 'string' && item.lat != null && item.lon != null && item.lat !== '' && item.lon !== '' && validPoint(Number(item.lat), Number(item.lon))) : [];
             locationStatus.textContent = matches.length ? 'Elige la dirección que corresponde al problema. No se elige automáticamente.' : 'No encontramos esa dirección. Añade el municipio o señala el lugar en el mapa.';
             matches.forEach((item) => {
@@ -212,11 +321,10 @@ export function initCitizenReport(form) {
                 const button = document.createElement('button');
                 button.type = 'button'; button.className = 'btn-secondary'; button.textContent = `Elegir: ${item.display_name}`;
                 button.addEventListener('click', () => {
-                    setPoint(Number(item.lat), Number(item.lon), 'Dirección elegida. Puedes continuar.');
-                    const reference = form.querySelector('#address_reference');
-                    if (!reference.value.trim()) reference.value = String(item.display_name).slice(0, 255);
+                    if (requestedAt !== pointVersion) return;
+                    setPoint(Number(item.lat), Number(item.lon), 'Comprueba en el mapa si el problema está aquí.', true, item.display_name);
                     results.replaceChildren();
-                    addressInput.focus();
+                    confirmLocation.focus();
                 });
                 li.append(button); results.append(li);
             });
@@ -236,16 +344,35 @@ export function initCitizenReport(form) {
         photoInput.setAttribute('capture', 'environment');
         photoInput.click();
     });
-    photoInput.addEventListener('change', () => {
+    photoInput.addEventListener('change', async () => {
+        const version = ++photoVersion;
         photoInput.removeAttribute('capture');
-        const file = photoInput.files?.[0];
+        let file = photoInput.files?.[0];
+        firstContinue.textContent = file ? 'Continuar' : 'Continuar sin foto';
         if (photoUrl) URL.revokeObjectURL(photoUrl);
         preview.hidden = true; preview.removeAttribute('src'); photoProblem = '';
         form.querySelector('[data-photo-label]').textContent = file ? 'Cambiar foto' : 'Agregar foto';
-        if (!file) return;
-        if (file.size > 5120 * 1024) photoProblem = 'La foto pesa más de 5 MB. Elige una más pequeña.';
-        else if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) photoProblem = 'Elige una foto JPEG, PNG o WebP.';
-        if (photoProblem) { errorFor(photoInput, photoProblem); return; }
+        errorFor(photoInput, '');
+        form.querySelector('[data-remove-photo]').hidden = !file;
+        preparingPhoto = Boolean(file);
+        if (!file) { form.querySelector('[data-photo-status]').textContent = ''; return; }
+        form.querySelector('[data-photo-status]').textContent = 'Preparando la foto…';
+        try {
+            file = await prepareReportPhoto(file);
+            if (version !== photoVersion) return;
+            const transfer = new DataTransfer();
+            transfer.items.add(file);
+            photoInput.files = transfer.files;
+            form.querySelector('[data-photo-status]').textContent = 'Foto lista. Ajustamos el tamaño automáticamente.';
+        } catch (error) {
+            if (version !== photoVersion) return;
+            photoProblem = error.message || 'No pudimos preparar la foto. Puedes quitarla y continuar.';
+            form.querySelector('[data-photo-status]').textContent = '';
+            errorFor(photoInput, photoProblem);
+            return;
+        } finally {
+            if (version === photoVersion) preparingPhoto = false;
+        }
         photoUrl = URL.createObjectURL(file);
         preview.onload = () => {
             if (preview.naturalWidth > 4000 || preview.naturalHeight > 4000) photoProblem = 'La foto supera los 4000 × 4000 píxeles. Elige una más pequeña.';
@@ -254,6 +381,10 @@ export function initCitizenReport(form) {
         preview.onerror = () => { photoProblem = 'No pudimos abrir esa foto. Elige otra imagen.'; preview.hidden = true; errorFor(photoInput, photoProblem); };
         preview.src = photoUrl; preview.hidden = false;
         errorFor(photoInput, '');
+    });
+    form.querySelector('[data-remove-photo]').addEventListener('click', () => {
+        photoInput.value = '';
+        photoInput.dispatchEvent(new Event('change', { bubbles: true }));
     });
     const description = form.querySelector('#description');
     const updateCounter = () => { form.querySelector('[data-counter-output]').textContent = `${description.value.length}/1000`; };
@@ -311,6 +442,14 @@ export function initCitizenReport(form) {
 
     form.addEventListener('submit', (event) => {
         if (submitting) { event.preventDefault(); return; }
+        if (navigator.onLine === false) {
+            event.preventDefault();
+            const warning = form.querySelector('[data-submit-error]');
+            warning.textContent = 'No se ha enviado. Revisa tu conexión y vuelve a intentarlo. Tus datos siguen aquí.';
+            warning.hidden = false;
+            warning.scrollIntoView({ block: 'center' });
+            return;
+        }
         for (let index = 0; index < steps.length; index++) {
             if (!validateStep(index)) { event.preventDefault(); return; }
         }

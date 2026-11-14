@@ -23,6 +23,6 @@ trait ResolvesStoredPhotoUrl
             return $storedPath;
         }
 
-        return Storage::disk('public')->url($storedPath);
+        return url(Storage::disk('public')->url($storedPath));
     }
 }

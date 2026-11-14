@@ -95,4 +95,16 @@ document.querySelectorAll('[data-print-receipt]').forEach((button) => {
     button.addEventListener('click', () => window.print());
 });
 
+const shareReceipt = document.querySelector('[data-share-receipt]');
+if (shareReceipt && navigator.share) {
+    shareReceipt.hidden = false;
+    shareReceipt.addEventListener('click', async () => {
+        try {
+            await navigator.share({ title: 'Mi reporte — Vigía Ciudadano', text: `Número de reporte: ${document.getElementById('ticket-code').textContent.trim()}`, url: shareReceipt.dataset.url });
+        } catch (error) {
+            if (error.name !== 'AbortError') document.getElementById('copy-feedback').textContent = 'No pudimos compartir. Puedes copiar el número.';
+        }
+    });
+}
+
 initCitizenReport(document.querySelector('[data-citizen-report]'));

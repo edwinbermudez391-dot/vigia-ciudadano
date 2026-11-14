@@ -36,7 +36,7 @@
         </p>
 
         <div class="inspection-evidence mt-6">
-            <x-photo-card label="Daño reportado" :url="$storage->url($report->damage_photo_url)">Compara el estado inicial con la reparación.</x-photo-card>
+            <x-photo-card label="Daño reportado" :url="$report->damage_photo_url ? $storage->url($report->damage_photo_url) : null">Compara el estado inicial con la reparación.</x-photo-card>
             <x-photo-card label="Solución entregada" :url="$order->solution_photo_url ? $storage->url($order->solution_photo_url) : null">Evidencia registrada por el contratista.</x-photo-card>
         </div>
 

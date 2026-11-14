@@ -12,6 +12,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // El túnel local termina HTTPS y reenvía la petición a Laravel por HTTP.
+        $middleware->trustProxies(
+            at: ['127.0.0.1', '::1'],
+            headers: \Illuminate\Http\Request::HEADER_X_FORWARDED_PROTO,
+        );
+
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureUserHasRole::class,
         ]);

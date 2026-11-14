@@ -79,7 +79,7 @@ final class ReportStatusChangedNotification extends Notification implements Shou
         $photoUrl = null;
         if ($this->report->damage_photo_url) {
             try {
-                $photoUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($this->report->damage_photo_url);
+                $photoUrl = url(\Illuminate\Support\Facades\Storage::disk('public')->url($this->report->damage_photo_url));
             } catch (\Throwable) {
                 $photoUrl = null;
             }

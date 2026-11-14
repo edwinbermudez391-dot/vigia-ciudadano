@@ -106,7 +106,7 @@ final class InstitutionalUiTest extends TestCase
         $report = $this->report(1);
         $this->get('/')->assertOk()->assertSee('Reportar un problema')->assertSee('Consultar mi reporte');
         $this->get('/mapa')->assertOk()->assertSee('Mapa de reportes');
-        $this->get('/reportes/crear')->assertOk()->assertSee('1. ¿Qué problema quieres reportar?');
+        $this->get('/reportes/crear')->assertOk()->assertSee('1. ¿Qué pasó?');
         $this->get('/reportes/'.$report->ticket_code)->assertOk()->assertSee('Así va tu reporte');
         $this->get('/reportes/exito/'.$report->ticket_code)->assertOk()->assertSee('Copiar número');
         $this->postJson('/api/v1/reports', [])->assertUnauthorized();
@@ -129,7 +129,7 @@ final class InstitutionalUiTest extends TestCase
             ->assertSee('Reporta daños en tu barrio y consulta cómo va su solución.')
             ->assertSee('data-report-lookup', false)
             ->assertSee('role="tablist"', false)
-            ->assertSee('Aviso de veeduría');
+            ->assertSee('Reportes y seguimiento abiertos a la ciudadanía.');
     }
 
     public function test_report_pages_have_explicit_desktop_layouts_without_losing_form_fields(): void

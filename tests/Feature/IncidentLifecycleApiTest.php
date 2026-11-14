@@ -168,7 +168,7 @@ final class IncidentLifecycleApiTest extends TestCase
             ->assertStatus(200)
             ->assertJsonPath('data.0.ticket_code', $report->ticket_code)
             ->assertJsonPath('data.0.work_order.status', WorkOrderStatus::Completed->value)
-            ->assertJsonPath('data.0.damage_photo_url', Storage::disk('public')->url('reports/damages/'.$report->ticket_code.'.jpg'));
+            ->assertJsonPath('data.0.damage_photo_url', url(Storage::disk('public')->url('reports/damages/'.$report->ticket_code.'.jpg')));
 
         $this->postJson("/api/v1/work-orders/{$order->id}/inspections", [
             'decision' => InspectionDecision::Rework->value,
