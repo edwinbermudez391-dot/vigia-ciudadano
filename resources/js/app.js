@@ -1,5 +1,6 @@
 import './bootstrap';
 import './citizen';
+import './inspector-location';
 
 const publicMenu = document.querySelector('[data-public-menu]');
 const publicNavigation = document.getElementById('public-navigation');

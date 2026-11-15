@@ -61,6 +61,21 @@ final class InstitutionalUiTest extends TestCase
             ->assertViewHas('stats', fn ($stats) => $stats['total'] === 2 && $stats['pending'] === 1 && $stats['closed'] === 1);
     }
 
+    public function test_dashboard_uses_fcfs_with_stable_ties_across_filtered_pages(): void
+    {
+        $reports = collect(range(1, 12))->map(fn ($number) => $this->report($number));
+        foreach ($reports as $index => $report) {
+            $report->forceFill(['created_at' => now()->startOfDay()->subDays($index === 0 ? 1 : ($index < 3 ? 3 : 2))])->save();
+        }
+        $expected = $reports->slice(1)->pluck('id')->push($reports->first()->id)->values();
+        $this->actingAs($this->admin())->get('/admin?q=prueba&status=reported')
+            ->assertOk()
+            ->assertSee('Orden de llegada:')
+            ->assertViewHas('recent', fn ($page) => $page->pluck('id')->all() === $expected->take(10)->all());
+        $this->get('/admin?q=prueba&status=reported&page=2')->assertOk()
+            ->assertViewHas('recent', fn ($page) => $page->pluck('id')->all() === $expected->slice(10)->values()->all());
+    }
+
     public function test_dashboard_search_and_status_filter_apply_together(): void
     {
         $this->report(1);
@@ -104,11 +119,11 @@ final class InstitutionalUiTest extends TestCase
     public function test_public_pages_and_api_authentication_remain_distinct(): void
     {
         $report = $this->report(1);
-        $this->get('/')->assertOk()->assertSee('Reportar un problema')->assertSee('Consultar mi reporte');
+        $this->get('/')->assertOk()->assertSee('Reportar un problema')->assertSee('Reportes en este dispositivo');
         $this->get('/mapa')->assertOk()->assertSee('Mapa de reportes');
         $this->get('/reportes/crear')->assertOk()->assertSee('1. ¿Qué pasó?');
         $this->get('/reportes/'.$report->ticket_code)->assertOk()->assertSee('Así va tu reporte');
-        $this->get('/reportes/exito/'.$report->ticket_code)->assertOk()->assertSee('Copiar número');
+        $this->get('/reportes/exito/'.$report->ticket_code)->assertOk()->assertSee('Consultar mi reporte');
         $this->postJson('/api/v1/reports', [])->assertUnauthorized();
         $this->getJson('/api/v1/reports/'.$report->ticket_code)->assertUnauthorized();
     }
@@ -127,7 +142,7 @@ final class InstitutionalUiTest extends TestCase
         $this->get('/')->assertOk()
             ->assertSee('Mejoremos nuestra comunidad')
             ->assertSee('Reporta daños en tu barrio y consulta cómo va su solución.')
-            ->assertSee('data-report-lookup', false)
+            ->assertDontSee('data-report-lookup', false)
             ->assertSee('role="tablist"', false)
             ->assertSee('Reportes y seguimiento abiertos a la ciudadanía.');
     }
@@ -199,7 +214,9 @@ final class InstitutionalUiTest extends TestCase
             ->assertSee('Lista de verificación técnica')
             ->assertSee('aria-pressed="false"', false)
             ->assertSee('name="verification_photo"', false)
-            ->assertSee('for="inspector-latitude"', false)
+            ->assertSee('data-inspector-map', false)
+            ->assertSee('name="inspector_latitude" type="hidden"', false)
+            ->assertSee('name="inspector_longitude" type="hidden"', false)
             ->assertSee('name="decision"', false)
             ->assertSee('name="rejection_reason"', false);
     }

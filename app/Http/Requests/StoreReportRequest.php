@@ -80,7 +80,7 @@ final class StoreReportRequest extends FormRequest
             'address_reference' => ['nullable', 'string', 'max:255'],
             'location_label' => ['nullable', 'string', 'max:255'],
             'damage_photo' => [
-                $this->routeIs('reports.store') ? 'nullable' : 'required',
+                'required',
                 'image',
                 'mimes:jpeg,png,webp',
                 'max:5120',
@@ -144,7 +144,7 @@ final class StoreReportRequest extends FormRequest
             'address_reference.string' => 'La referencia de dirección debe ser texto.',
             'address_reference.max' => 'La referencia de dirección no puede superar los :max caracteres.',
 
-            'damage_photo.required' => 'La foto del daño es obligatoria: adjunta la evidencia en el archivo "damage_photo".',
+            'damage_photo.required' => 'Agrega una foto del problema para enviar el reporte.',
             'damage_photo.image' => 'El archivo "damage_photo" no es una imagen válida según su contenido (solo se aceptan JPEG, PNG o WebP).',
             'damage_photo.mimes' => 'La foto del daño debe ser una imagen de tipo: :values.',
             'damage_photo.max' => 'La foto del daño no puede superar los 5 MB.',

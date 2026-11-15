@@ -234,18 +234,20 @@
 
         <ol class="report-timeline">
             @foreach ($steps as $step)
-                <li class="relative">
+                <li class="relative" @if ($step['active'] ?? false) aria-current="step" @endif>
                     {{-- nodo --}}
                     <span @class([
                         'absolute -left-[31px] top-0.5 grid size-5 place-items-center rounded-full border-2 text-[10px] font-bold',
                         'border-emerald-500 bg-emerald-500 text-white' => $step['done'],
-                        'border-[#b9daca] bg-white text-[#5d7d70]' => !$step['done'],
-                    ])>{{ $step['done'] ? '✓' : '·' }}</span>
+                        'border-blue-700 bg-blue-700 text-white' => $step['active'] ?? false,
+                        'border-[#b9daca] bg-white text-[#5d7d70]' => !$step['done'] && !($step['active'] ?? false),
+                    ])>{{ $step['done'] ? '✓' : (($step['active'] ?? false) ? '●' : '·') }}</span>
 
                     <p @class([
                         'text-sm font-semibold',
                         'text-[#062e24]' => $step['done'],
-                        'text-[#5d7d70]' => !$step['done'],
+                        'text-blue-800' => $step['active'] ?? false,
+                        'text-[#5d7d70]' => !$step['done'] && !($step['active'] ?? false),
                     ])>{{ $step['title'] }}</p>
 
                     @if ($step['at'])
@@ -262,29 +264,7 @@
         </ol>
     </section>
 
-    {{-- ================= VEDURÍA (seguimiento) ================= --}}
-    <section class="flex flex-wrap items-center justify-between gap-3 bg-white/95 rounded-2xl border border-[#d5e8e0] shadow-[0_8px_30px_rgba(6,46,36,0.04)] p-6 text-[#062e24]">
-        <div class="flex items-center gap-3">
-            <span class="grid size-10 place-items-center rounded-xl bg-[#e8f8f0] text-lg">👁️</span>
-            <div>
-                <p class="text-sm font-medium text-[#062e24]">{{ $report->subscribers->count() }} vecino(s) vigilando esta obra</p>
-                <p class="text-xs text-[#5d7d70]">
-                    {{ $subscribed ? 'Estás suscrito: recibirás cada cambio de estado.' : 'Súmate para hacer veeduría ciudadana.' }}
-                </p>
-            </div>
-        </div>
 
-        @if (!$subscribed)
-            <button type="button" id="follow-btn" data-report-id="{{ $report->id }}"
-                    class="bg-[#087b5f] hover:bg-[#05664e] text-white font-bold px-4 py-2.5 rounded-xl shadow-sm transition active:scale-[0.98]">
-                Seguir incidencia
-            </button>
-        @else
-            <span class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700">
-                Siguiendo ✓
-            </span>
-        @endif
-    </section>
 
     </div>
     </div>
@@ -316,34 +296,6 @@
         });
     })();
 
-    (function () {
-        const btn = document.getElementById('follow-btn');
-        if (!btn) { return; }
 
-        const csrf = document.querySelector('meta[name="csrf-token"]').content;
-
-        btn.addEventListener('click', async () => {
-            btn.disabled = true;
-            btn.textContent = '…';
-
-            try {
-                const res = await fetch('/api/v1/reports/' + btn.dataset.reportId + '/subscribe', {
-                    method: 'POST',
-                    headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-                    credentials: 'same-origin',
-                });
-
-                if (res.ok) {
-                    btn.outerHTML = '<span class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700">Siguiendo ✓</span>';
-                } else {
-                    btn.textContent = 'Error, reintenta';
-                    btn.disabled = false;
-                }
-            } catch (e) {
-                btn.textContent = 'Sin conexión';
-                btn.disabled = false;
-            }
-        });
-    })();
 </script>
 @endpush

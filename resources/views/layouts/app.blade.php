@@ -65,7 +65,6 @@
         @endif
         @yield('content')
     </main>
-    <footer class="app-footer">Vigía Ciudadano · {{ date('Y') }} · La obra pública, vigilada por todos.</footer>
     </div>
     </div>
     @stack('scripts')

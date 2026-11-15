@@ -48,7 +48,7 @@
                        class="btn-primary">
                         <x-icon name="camera" />Reportar un problema
                     </a>
-                    <a href="#consultar" class="btn-secondary" data-focus-lookup><x-icon name="search" />Consultar mi reporte</a>
+                    <a href="{{ route('reports.device') }}" class="btn-secondary"><x-icon name="report" />Reportes en este dispositivo</a>
                 </div>
 
             </div>
@@ -56,16 +56,15 @@
             <aside class="public-service-card" aria-label="Antes de enviar tu reporte">
                 <h2>Reportar es sencillo</h2>
                 <ol class="report-steps">
-                    <li><span class="step-icon"><x-icon name="report" /></span><div><strong>1. Problema</strong><p>Elige qué pasó.</p></div></li>
-                    <li><span class="step-icon"><x-icon name="map" /></span><div><strong>2. Ubicación</strong><p>Indica dónde ocurre.</p></div></li>
-                    <li><span class="step-icon"><x-icon name="camera" /></span><div><strong>3. Foto y detalles</strong><p>Envía y guarda tu número.</p></div></li>
+                    <li><span class="step-icon"><x-icon name="camera" /></span><div><strong>1. Problema y foto</strong><p>Elige qué pasó, cuéntanos y agrega una foto.</p></div></li>
+                    <li><span class="step-icon"><x-icon name="map" /></span><div><strong>2. Tu ubicación</strong><p>Usa la ubicación del celular y confirma el punto en el mapa.</p></div></li>
+                    <li><span class="step-icon"><x-icon name="check" /></span><div><strong>3. Revisar y enviar</strong><p>Comprueba los datos y envía el reporte.</p></div></li>
                 </ol>
-                <p class="citizen-help">Te guiamos paso a paso. Guarda el número al terminar.</p>
+                <p class="citizen-help">Después, consulta el avance en «Reportes en este dispositivo».</p>
             </aside>
         </div>
     </section>
 
-    <div class="public-section-inner citizen-home-lookup"><x-report-lookup /></div>
     <div class="public-section-inner">
     <details class="citizen-extras">
         <summary>Ver el mapa, cómo funciona y los resultados</summary>

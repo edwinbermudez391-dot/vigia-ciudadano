@@ -1,4 +1,5 @@
 import { initCitizenReport } from './citizen-report';
+import './device-reports';
 
 const citizenPage = document.querySelector('.citizen-ui');
 if (citizenPage) {
@@ -100,9 +101,9 @@ if (shareReceipt && navigator.share) {
     shareReceipt.hidden = false;
     shareReceipt.addEventListener('click', async () => {
         try {
-            await navigator.share({ title: 'Mi reporte — Vigía Ciudadano', text: `Número de reporte: ${document.getElementById('ticket-code').textContent.trim()}`, url: shareReceipt.dataset.url });
+            await navigator.share({ title: 'Mi reporte — Vigía Ciudadano', text: 'Consulta el estado de mi reporte.', url: shareReceipt.dataset.url });
         } catch (error) {
-            if (error.name !== 'AbortError') document.getElementById('copy-feedback').textContent = 'No pudimos compartir. Puedes copiar el número.';
+            if (error.name !== 'AbortError') document.getElementById('copy-feedback').textContent = 'No pudimos compartir. Vuelve a intentarlo.';
         }
     });
 }

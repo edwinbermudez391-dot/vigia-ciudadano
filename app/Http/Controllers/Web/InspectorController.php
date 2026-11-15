@@ -26,19 +26,6 @@ use Illuminate\View\View;
  */
 final class InspectorController extends Controller
 {
-    /**
-     * Checklist del dictamen (clave técnica => enunciado visible).
-     *
-     * @var array<string, string>
-     */
-    private const CHECKLIST = [
-        'superficie_uniforme' => 'Superficie uniforme y correctamente compactada',
-        'pendiente_drenaje' => 'Pendiente adecuada para el drenaje de aguas',
-        'area_senalizada' => 'Área de trabajo señalizada y libre de escombros',
-        'materiales_especificados' => 'Materiales acordes a la especificación técnica',
-        'sin_afectacion_residual' => 'Sin afectación vehicular o peatonal residual',
-    ];
-
     public function __construct(
         private readonly QualityInspectionRecorder $recorder,
     ) {}
@@ -68,7 +55,7 @@ final class InspectorController extends Controller
         return view('inspector.audit', [
             'order' => $order,
             'report' => $order->report,
-            'checklist' => self::CHECKLIST,
+            'checklist' => \App\Support\InspectionChecklist::forCategory($order->report->category?->name),
         ]);
     }
 

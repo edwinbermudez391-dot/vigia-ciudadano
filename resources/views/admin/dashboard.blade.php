@@ -22,7 +22,7 @@
         <div class="panel-header">
             <div>
                 <h2 id="reports-title">Reportes ciudadanos</h2>
-                <p>Más recientes primero.</p>
+                <p>Orden de llegada: los reportes más antiguos primero (FCFS).</p>
             </div>
             <span class="report-meta">{{ $recent->total() }} resultado(s)</span>
         </div>
@@ -45,7 +45,7 @@
         </form>
         <div class="table-scroll">
             <table class="reports-table" role="table">
-                <caption class="sr-only">Reportes ciudadanos ordenados por fecha de registro, del más reciente al más antiguo</caption>
+                <caption class="sr-only">Reportes ciudadanos en orden FCFS: del más antiguo al más reciente; en caso de empate, primero el de menor identificador</caption>
                 <thead><tr><th scope="col" style="width:40%">Reporte</th><th scope="col" style="width:20%">Estado</th><th scope="col" style="width:40%">Acciones</th></tr></thead>
                 <tbody>
                     @forelse ($recent as $report)

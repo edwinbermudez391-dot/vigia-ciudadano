@@ -53,6 +53,7 @@ final class QualityInspectionRecorder
                     'work_order_id' => $order->id,
                     'inspector_id' => $inspector->id,
                     'checklist_results' => $payload['checklist_results'],
+                    'checklist_snapshot' => \App\Support\InspectionChecklist::forCategory($report->category?->name),
                     'decision' => $decision->value,
                     // Un "approved" no admite motivo de rechazo: se normaliza
                     // a null aunque el cliente lo haya enviado.

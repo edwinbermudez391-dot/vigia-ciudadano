@@ -33,6 +33,7 @@ final class ReportResource extends JsonResource
             'longitude' => $this->longitude,
             'address_reference' => $this->address_reference,
             'damage_photo_url' => $this->photoUrl($this->damage_photo_url),
+            'inspection_checklist' => $this->whenLoaded('category', fn () => \App\Support\InspectionChecklist::forCategory($this->category?->name)),
             'category' => $this->whenLoaded('category', fn (): array => [
                 'id' => $this->category->id,
                 'name' => $this->category->name,

@@ -44,8 +44,8 @@ final class CitizenExperienceTest extends TestCase
     public function test_home_prioritizes_reporting_and_inline_lookup_without_modals(): void
     {
         $this->get('/')->assertOk()->assertSee('Mejoremos nuestra comunidad')
-            ->assertSee('Reportar un problema')->assertSee('Consultar mi reporte')
-            ->assertSee('data-report-lookup', false)->assertSee('Buscar reporte')
+            ->assertSee('Reportar un problema')->assertSee('Reportes en este dispositivo')
+            ->assertDontSee('data-report-lookup', false)->assertDontSee('Buscar reporte')
             ->assertSee('citizen-extras')->assertSee('data-text-size', false)
             ->assertDontSee('id="ticket-modal"', false);
     }
@@ -57,7 +57,9 @@ final class CitizenExperienceTest extends TestCase
             ->assertSee('Hueco en la calle')->assertSee('value="'.$category->id.'"', false)
             ->assertSee('data-category-name="Baches y Malla Vial"', false)
             ->assertSee('data-report-step="0"', false)->assertSee('data-report-step="1"', false)->assertSee('data-report-step="2"', false)
-            ->assertSee('Buscar dirección')->assertSee('Elegir el centro del mapa')
+            ->assertSee('Usar mi ubicación')->assertSee('Mapa para señalar el problema')
+            ->assertDontSee('id="address-search"', false)
+            ->assertDontSee('data-use-map-center', false)
             ->assertSee('Agregar foto')->assertSee('data-photo-camera', false)
             ->assertSee('name="latitude"', false)->assertSee('name="longitude"', false)
             ->assertSee('maxlength="1000"', false)
@@ -86,7 +88,23 @@ final class CitizenExperienceTest extends TestCase
         Storage::disk('public')->assertExists($report->damage_photo_url);
         $this->get(route('reports.success', $report->ticket_code))->assertOk()
             ->assertSee('¡Tu reporte fue recibido!')->assertSee($report->ticket_code)
-            ->assertSee('Copiar número')->assertSee('Imprimir comprobante');
+            ->assertDontSee('Copiar número')->assertDontSee('Imprimir comprobante')
+            ->assertDontSee('Compartir comprobante')
+            ->assertSee('data-device-receipt', false);
+        $this->get(route('reports.success', $report->ticket_code))->assertOk()
+            ->assertDontSee('data-device-receipt', false);
+    }
+
+    public function test_device_reports_page_is_public_and_does_not_list_other_peoples_reports(): void
+    {
+        $report = $this->report();
+        $this->get('/reportes/mis-reportes')->assertOk()
+            ->assertSee('Mis reportes en este dispositivo')
+            ->assertSee('data-device-reports', false)
+            ->assertDontSee($report->ticket_code);
+        $this->get(route('reports.success', $report->ticket_code))->assertOk()
+            ->assertDontSee('data-device-receipt', false);
+        $this->get('/')->assertOk()->assertSee(route('reports.device'), false);
     }
 
     public function test_invalid_submission_preserves_values_and_does_not_claim_success(): void
@@ -102,7 +120,7 @@ final class CitizenExperienceTest extends TestCase
             ->assertDontSee('¡Tu reporte fue recibido!');
     }
 
-    public function test_citizen_can_report_without_a_photo_or_contact_details(): void
+    public function test_citizen_cannot_report_without_a_photo(): void
     {
         Storage::fake('public');
         $category = $this->category();
@@ -112,14 +130,31 @@ final class CitizenExperienceTest extends TestCase
             'latitude' => 3.0095, 'longitude' => -76.4849,
             'location_label' => 'Parque principal', 'address_reference' => 'Frente a la farmacia',
         ]);
-        $response->assertSessionHasNoErrors();
-        $report = Report::sole();
-        $this->assertNull($report->damage_photo_url);
-        $this->assertSame('Parque principal · Frente a la farmacia', $report->address_reference);
-        $this->assertSame('Hay un hueco grande que dificulta el paso.', $report->title);
+        $response->assertSessionHasErrors('damage_photo');
+        $this->assertDatabaseCount('reports', 0);
         $this->assertSame([], Storage::disk('public')->allFiles());
-        $response->assertRedirect(route('reports.success', $report->ticket_code));
-        $this->get(route('reports.show', $report->ticket_code))->assertOk();
+    }
+
+    public function test_timeline_marks_execution_only_after_the_crew_starts_work(): void
+    {
+        $report = $this->report();
+        $contractor = User::factory()->create(['role' => UserRole::Contractor]);
+        $order = WorkOrder::create([
+            'report_id' => $report->id, 'contractor_id' => $contractor->id,
+            'scheduled_date' => now()->toDateString(), 'status' => WorkOrderStatus::Assigned,
+        ]);
+        $this->actingAs($contractor)->get(route('reports.show', $report->ticket_code))
+            ->assertOk()->assertDontSee('Obra en ejecución')
+            ->assertSee('Pendiente que el contratista inicie');
+        $this->patch(route('contractor.startWork', $order))->assertRedirect();
+        $this->get(route('reports.show', $report->ticket_code))->assertOk()
+            ->assertSee('Obra en ejecución')->assertSee('aria-current="step"', false);
+        $order->update(['status' => WorkOrderStatus::Completed, 'completion_date' => now()]);
+        $this->get(route('reports.show', $report->ticket_code))->assertOk()
+            ->assertSee('Obra ejecutada por el contratista')->assertDontSee('Obra en ejecución');
+        $order->update(['status' => WorkOrderStatus::InExecution]);
+        $this->get(route('reports.show', $report->ticket_code))->assertOk()
+            ->assertSee('Obra en ejecución')->assertSee('aria-current="step"', false);
     }
 
     public function test_report_photos_use_the_current_site_in_public_and_staff_views(): void

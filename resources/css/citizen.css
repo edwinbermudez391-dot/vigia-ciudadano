@@ -39,10 +39,9 @@
 .citizen-error-summary { background: #fff1f2; border-color: #9f1239; color: #881337; }
 .citizen-error-summary ul { list-style: disc; padding-left: 1.5rem; }
 .citizen-error-summary a { text-decoration: underline; }
-.citizen-progress { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; font-size: var(--citizen-small); }
-.citizen-progress li { display: flex; align-items: center; gap: .5rem; padding: .625rem; border-bottom: 3px solid #cbd5e1; color: #334155; overflow-wrap: anywhere; }
-.citizen-progress li[aria-current=step] { color: #1e3a8a; border-color: #1e40af; font-weight: 700; background: #eff6ff; }
-.citizen-progress li > span { flex-shrink: 0; }
+.citizen-progress { display: none; }
+.citizen-step-status { margin: 0; color: #1e3a8a; font-size: var(--citizen-small); font-weight: 600; }
+.citizen-step-status::after { content: ''; display: block; height: .375rem; margin-top: .75rem; border-radius: 1rem; background: linear-gradient(to right, #1e40af var(--step-progress, 33.33%), #dbe3ee var(--step-progress, 33.33%)); }
 .citizen-report-form { display: grid; gap: 1.5rem; }
 .citizen-step > * + * { margin-top: 1.25rem; }
 .citizen-categories { display: grid; grid-template-columns: minmax(0, 1fr); gap: .75rem; }
@@ -56,14 +55,21 @@
 .citizen-category-info { padding: .5rem 1rem; background: #f8fafc; border-radius: .75rem; }
 .citizen-step-actions, .citizen-actions { display: flex; flex-direction: column; gap: .75rem; margin-top: 1.5rem; }
 .citizen-address-results { display: grid; gap: .75rem; }
+.citizen-location-choices { display: grid; gap: .75rem; }
+.citizen-location-choices > button { width: 100%; justify-content: center; }
 .citizen-address-results li { list-style: none; min-width: 0; }
 .citizen-ui .citizen-address-results button { width: 100%; text-align: left; justify-content: flex-start; white-space: normal; }
 .citizen-map-section > * + * { margin-top: .75rem; }
 .citizen-ui #map.citizen-location-map { width: 100%; height: 18rem; border: 1px solid #94a3b8; border-radius: .75rem; z-index: 1; }
-.citizen-location-map::after { content: '+'; position: absolute; left: 50%; top: 50%; translate: -50% -50%; z-index: 450; pointer-events: none; display: grid; place-items: center; width: 2rem; height: 2rem; background: white; border: 2px solid #1e40af; border-radius: 50%; color: #1e40af; font-size: 1.5rem; line-height: 1; }
 .citizen-fields { display: grid; gap: 1rem; }
 .citizen-ui .citizen-card label.citizen-photo-picker { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: .75rem; min-height: 3.5rem; max-width: 100%; padding: .75rem 1rem; border: 2px solid #1e40af; color: #1e3a8a; border-radius: .625rem; background: #eff6ff; cursor: pointer; }
 .citizen-ui .citizen-photo-preview { display: block; margin-top: 1rem; width: 100%; max-height: 22rem; object-fit: contain; background: #f1f5f9; border-radius: .75rem; }
+.citizen-photo-actions { display: grid; grid-template-columns: minmax(0, 1fr); gap: .75rem; align-items: stretch; }
+.citizen-ui .citizen-photo-actions > :is(button, label.citizen-photo-picker) { width: 100%; min-height: 3.5rem; margin: 0; box-sizing: border-box; justify-content: center; font-weight: 600; }
+@media (min-width: 40rem) {
+    .citizen-photo-actions { display: flex; flex-wrap: wrap; }
+    .citizen-ui .citizen-photo-actions > :is(button, label.citizen-photo-picker) { width: auto; flex: 1 1 11rem; }
+}
 .citizen-ui .citizen-contact > * + * { margin-top: 1rem; }
 .citizen-ui [aria-invalid=true]:not([type=radio]), .citizen-ui .citizen-card label.citizen-category:has(input[aria-invalid=true]) { border-color: #9f1239; }
 .citizen-summary { display: grid; gap: 1rem; }
@@ -73,6 +79,9 @@
 .citizen-ui .citizen-number, .citizen-ui #ticket-code.citizen-number { font-size: clamp(1.25rem, 4vw, 2rem); font-weight: 700; letter-spacing: .01em; overflow-wrap: anywhere; user-select: all; }
 .citizen-ticket { padding: 1.25rem; border: 2px solid #1e40af; background: #eff6ff; border-radius: .75rem; }
 .citizen-receipt { max-width: 54rem; }
+.citizen-device-list { display: grid; gap: 1rem; padding: 0; list-style: none; }
+.citizen-device-list li { padding: 1rem; border: 1px solid #cbd5e1; border-radius: .75rem; overflow-wrap: anywhere; }
+.citizen-device-list li > * + * { margin-top: .75rem; }
 .citizen-status { border-left: 4px solid #1e40af; padding: 1rem; background: #eff6ff; border-radius: .5rem; }
 .citizen-status > strong { font-size: 1.375rem; }
 .citizen-status p { font-size: var(--citizen-small); }
@@ -92,7 +101,17 @@
     .citizen-step-actions, .citizen-actions { flex-direction: row; flex-wrap: wrap; align-items: center; }
     .citizen-step-actions { justify-content: space-between; }
     .citizen-lookup-controls { flex-direction: row; align-items: start; }
-    .citizen-progress li { padding: .75rem; }
+    .citizen-progress { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; max-width: 44rem; margin: .5rem auto; gap: 0; font-size: var(--citizen-small); }
+    .citizen-progress li { position: relative; display: flex; flex-direction: column; align-items: center; gap: .625rem; padding: 0 .5rem; color: #475569; text-align: center; }
+    .citizen-progress li:not(:last-child)::after { content: ''; position: absolute; top: 1.25rem; left: calc(50% + 1.5rem); width: calc(100% - 3rem); height: 2px; background: #cbd5e1; }
+    .citizen-progress li > span { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border: 2px solid #94a3b8; border-radius: 50%; background: white; font-weight: 700; }
+    .citizen-progress li > strong { font-weight: 500; }
+    .citizen-progress li[aria-current=step] { color: #1e40af; }
+    .citizen-progress li[aria-current=step] > span { background: #1e40af; color: white; border-color: #1e40af; box-shadow: 0 0 0 4px #dbeafe; }
+    .citizen-progress li[aria-current=step] > strong { font-weight: 700; }
+    .citizen-progress li[data-state=complete] > span { background: #e8f5ee; color: #166534; border-color: #166534; }
+    .citizen-progress li[data-state=complete]::after { background: #166534; }
+    .citizen-step-status { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 }
 @media (min-width: 64rem) {
     .citizen-card { padding: 1.5rem; }

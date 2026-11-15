@@ -11,7 +11,7 @@
         <h1>Vamos a reportar un problema</h1>
         <p>No necesitas una cuenta.</p>
     </header>
-    <noscript><p class="citizen-notice">Puedes completar el formulario en esta página. Sin JavaScript, escribe las coordenadas del lugar en el paso 2.</p></noscript>
+    <noscript><p class="citizen-notice">Puedes completar el formulario en esta página. Activa JavaScript para elegir el lugar del problema.</p></noscript>
     @if ($errors->any())
         <div class="citizen-notice citizen-error-summary" role="alert" tabindex="-1" data-citizen-errors>
             <h2>Revisa la información que ingresaste</h2>
@@ -29,11 +29,11 @@
     @endif
 
     <ol class="citizen-progress" aria-label="Pasos para enviar el reporte" data-report-progress hidden>
-        <li aria-current="step"><span>1</span>El problema</li>
-        <li><span>2</span>El lugar</li>
-        <li><span>3</span>Revisar y enviar</li>
+        <li aria-current="step"><span aria-hidden="true">1</span><strong>El problema</strong></li>
+        <li><span aria-hidden="true">2</span><strong>El lugar</strong></li>
+        <li><span aria-hidden="true">3</span><strong>Revisar y enviar</strong></li>
     </ol>
-    <p class="citizen-help" role="status" data-step-status hidden></p>
+    <p class="citizen-step-status" role="status" data-step-status hidden></p>
 
     <form method="POST" action="{{ route('reports.store') }}" enctype="multipart/form-data"
           id="report-form" class="citizen-report-form" data-citizen-report
@@ -76,92 +76,57 @@
                 <x-citizen-field-error field="category_id" />
                 @if ($categories->isEmpty())<p class="citizen-notice">No hay tipos de problema disponibles. Inténtalo más tarde.</p>@endif
             </fieldset>
-            <details class="citizen-category-info" data-category-info hidden>
-                <summary>Ver información de esta categoría</summary>
-                <p data-category-description></p><p data-category-responsible></p><p data-category-time></p>
-            </details>
             <div>
                 <label for="description">Cuéntanos qué pasa</label>
                 <textarea id="description" name="description" rows="4" required minlength="15" maxlength="1000" data-counter-textarea
                           placeholder="Ej.: Hay un hueco grande frente a mi casa. Se llena de agua y dificulta el paso."
                           aria-describedby="description-help description-error" aria-invalid="{{ $errors->has('description') ? 'true' : 'false' }}">{{ old('description') }}</textarea>
-                <p id="description-help" class="citizen-help">Sin nombres ni teléfonos. <span data-counter-output class="sr-only"></span></p>
+                <span id="description-help" data-counter-output class="sr-only"></span>
                 <x-citizen-field-error field="description" />
             </div>
             <div>
-                <p id="photo-title" class="citizen-label">¿Quieres agregar una foto? (Opcional)</p>
+                <p id="photo-title" class="citizen-label">Foto del problema (obligatoria)</p>
+                <div class="citizen-photo-actions" role="group" aria-labelledby="photo-title">
                 <label for="damage_photo" class="citizen-photo-picker"><x-icon name="camera" /><span data-photo-label>Agregar foto</span>
                     <input id="damage_photo" name="damage_photo" type="file" accept="image/jpeg,image/png,image/webp"
-                           class="sr-only" data-photo-input aria-describedby="photo-help damage_photo-error" aria-invalid="{{ $errors->has('damage_photo') ? 'true' : 'false' }}">
+                           class="sr-only" data-photo-input required aria-describedby="damage_photo-error" aria-invalid="{{ $errors->has('damage_photo') ? 'true' : 'false' }}">
                 </label>
                 <button type="button" class="btn-secondary" data-photo-camera hidden><x-icon name="camera" />Tomar foto</button>
                 <button type="button" class="btn-secondary" data-remove-photo hidden>Quitar foto</button>
+                </div>
                 <p class="citizen-help" role="status" data-photo-status></p>
-                <p id="photo-help" class="citizen-help">Evita rostros y datos personales.</p>
                 <img data-photo-preview class="citizen-photo-preview" alt="Vista previa de la foto que enviarás" hidden>
                 <x-citizen-field-error field="damage_photo" />
             </div>
-            <details><summary>¿Necesitas ayuda?</summary><p>Elige el problema y cuenta qué ocurre. Puedes continuar sin foto.</p></details>
             <div class="citizen-step-actions" data-step-actions hidden>
                 <button type="button" class="btn-primary" data-step-next @disabled($categories->isEmpty())>Continuar<x-icon name="arrow" /></button>
             </div>
         </section>
 
         <section class="citizen-card citizen-step" data-report-step="1" aria-labelledby="step-2-title">
-            <h2 id="step-2-title" tabindex="-1">2. ¿Dónde está el problema?</h2>
-            <p>¿El problema está donde estás ahora?</p>
+            <h2 id="step-2-title" tabindex="-1">2. Tu ubicación</h2>
+            <p>Ubícate junto al problema y toca el botón.</p>
             <input type="hidden" name="location_label" value="{{ old('location_label') }}" data-selected-place>
-            <button type="button" class="btn-secondary" data-geolocate hidden><x-icon name="map" /><span>Sí, usar mi ubicación</span></button>
-            <button type="button" class="btn-secondary" data-choose-address hidden aria-expanded="false" aria-controls="address-panel">No, buscar dirección</button>
-            <div id="address-panel" class="citizen-location-search" data-address-search hidden>
-                <label for="address-search">Busca una dirección o un lugar conocido</label>
-                <div class="citizen-lookup-controls">
-                    <input id="address-search" type="search" maxlength="255" placeholder="Ej.: Parque principal, Santander de Quilichao" aria-describedby="address-privacy location-status">
-                    <button type="button" class="btn-secondary" data-find-address>Buscar dirección</button>
-                </div>
-                <details><summary>Ayuda para buscar</summary><p id="address-privacy" class="citizen-help">Incluye calle, barrio y municipio. La dirección se busca en OpenStreetMap; no escribas nombres ni teléfonos.</p></details>
-                <ul class="citizen-address-results" data-address-results aria-label="Direcciones encontradas"></ul>
+            <div class="citizen-location-choices">
+                <button type="button" class="btn-primary" data-geolocate hidden><x-icon name="map" /><span>Usar mi ubicación</span></button>
             </div>
             <p id="location-status" class="citizen-notice" role="status" data-location-status>Elige una opción para ubicar el problema.</p>
+            <details class="citizen-map-section" data-map-section hidden>
+                <summary>Ver mi ubicación en el mapa</summary>
+                <div id="map" class="citizen-location-map" role="region" aria-label="Mapa para señalar el problema"></div>
+            </details>
             <div class="citizen-notice" data-location-confirmation hidden>
                 <p data-location-label></p>
-                <h3>¿El problema está aquí?</h3>
+                <h3 data-confirm-title>¿El problema está aquí?</h3>
                 <div class="citizen-actions">
                     <button type="button" class="btn-primary" data-confirm-location>Sí, este es el lugar</button>
-                    <button type="button" class="btn-secondary" data-change-location>Cambiar lugar</button>
+                    <button type="button" class="btn-secondary" data-change-location>Volver a obtener mi ubicación</button>
                 </div>
             </div>
-            <details class="citizen-map-section" data-map-section hidden>
-                <summary>Señalar el lugar en el mapa</summary>
-                <p id="map-help" class="citizen-help">Toca o haz clic en el lugar. Con el teclado, mueve el mapa con las flechas y usa «Elegir el centro del mapa» para seleccionar el punto azul.</p>
-                <div id="map" class="citizen-location-map" role="region" aria-label="Mapa para señalar el problema" aria-describedby="map-help"></div>
-                <button type="button" class="btn-secondary" data-use-map-center>Elegir el centro del mapa</button>
-            </details>
-            <div>
-                <label for="address_reference">¿Qué hay cerca? (Opcional)</label>
-                <input id="address_reference" name="address_reference" type="text" value="{{ old('address_reference') }}" maxlength="255"
-                       placeholder="Ej.: frente al parque, junto a la tienda" autocomplete="street-address"
-                       aria-describedby="address_reference-error" aria-invalid="{{ $errors->has('address_reference') ? 'true' : 'false' }}">
-                <x-citizen-field-error field="address_reference" />
-            </div>
-            <details class="citizen-coordinates" data-coordinates open>
-                <summary>Más opciones de ubicación</summary>
-                <p class="citizen-help">Si buscas la dirección, eliges el mapa o usas tu ubicación, estos datos se completan solos.</p>
-                <div class="citizen-fields">
-                    <div>
-                        <label for="latitude">Latitud</label>
-                        <input id="latitude" name="latitude" type="number" step="any" min="-90" max="90" value="{{ old('latitude') }}" data-lat-input required
-                               aria-describedby="latitude-error" aria-invalid="{{ $errors->has('latitude') ? 'true' : 'false' }}">
-                        <x-citizen-field-error field="latitude" />
-                    </div>
-                    <div>
-                        <label for="longitude">Longitud</label>
-                        <input id="longitude" name="longitude" type="number" step="any" min="-180" max="180" value="{{ old('longitude') }}" data-lng-input required
-                               aria-describedby="longitude-error" aria-invalid="{{ $errors->has('longitude') ? 'true' : 'false' }}">
-                        <x-citizen-field-error field="longitude" />
-                    </div>
-                </div>
-            </details>
+            <input id="latitude" name="latitude" type="hidden" value="{{ old('latitude') }}" data-lat-input>
+            <input id="longitude" name="longitude" type="hidden" value="{{ old('longitude') }}" data-lng-input>
+            <x-citizen-field-error field="latitude" />
+            <x-citizen-field-error field="longitude" />
             <div class="citizen-step-actions" data-step-actions hidden>
                 <button type="button" class="btn-secondary" data-step-previous>Anterior</button>
                 <button type="button" class="btn-primary" data-step-next>Continuar<x-icon name="arrow" /></button>
@@ -177,12 +142,11 @@
                 <div><dt>Lugar</dt><dd data-review-location></dd><button type="button" class="btn-secondary" data-edit-step="1" hidden>Cambiar lugar</button></div>
             </dl>
             <img data-review-photo class="citizen-photo-preview" alt="Foto del problema que vas a enviar" hidden>
-            <details class="citizen-contact" @if ($errors->hasAny(['citizen_name', 'citizen_phone', 'citizen_email'])) open @endif>
+            <details class="citizen-contact" @if ($errors->hasAny(['citizen_name', 'citizen_email'])) open @endif>
                 <summary>Recibir novedades por correo (opcional)</summary>
                 <p class="citizen-help">Estos datos son opcionales y privados.</p>
                 <div class="citizen-fields">
                     <div><label for="citizen_name">Nombre (opcional)</label><input id="citizen_name" name="citizen_name" type="text" maxlength="120" value="{{ old('citizen_name') }}" autocomplete="name" aria-describedby="citizen_name-error" aria-invalid="{{ $errors->has('citizen_name') ? 'true' : 'false' }}"><x-citizen-field-error field="citizen_name" /></div>
-                    <div><label for="citizen_phone">Teléfono (opcional)</label><input id="citizen_phone" name="citizen_phone" type="tel" maxlength="25" value="{{ old('citizen_phone') }}" autocomplete="tel" aria-describedby="citizen_phone-error" aria-invalid="{{ $errors->has('citizen_phone') ? 'true' : 'false' }}"><x-citizen-field-error field="citizen_phone" /></div>
                 </div>
                 <div><label for="citizen_email">Correo electrónico (opcional)</label><input id="citizen_email" name="citizen_email" type="email" maxlength="255" value="{{ old('citizen_email') }}" autocomplete="email" aria-describedby="citizen_email-error" aria-invalid="{{ $errors->has('citizen_email') ? 'true' : 'false' }}"><x-citizen-field-error field="citizen_email" /></div>
             </details>

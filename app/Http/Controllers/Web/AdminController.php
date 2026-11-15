@@ -67,7 +67,9 @@ final class AdminController extends Controller
                 });
             })
             ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
-            ->latest()
+            // FCFS: los reportes conservan su turno por fecha de llegada.
+            ->orderBy('created_at')
+            ->orderBy('id')
             ->paginate(10)
             ->withQueryString();
 

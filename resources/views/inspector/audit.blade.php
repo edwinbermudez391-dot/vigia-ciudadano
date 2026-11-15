@@ -1,5 +1,9 @@
 @extends('layouts.app')
 
+@push('head')
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous">
+@endpush
+
 @php
     $storage = \Illuminate\Support\Facades\Storage::disk('public');
     $items = collect(old('checklist_results', []));
@@ -54,6 +58,7 @@
             <h2 class="text-sm font-bold uppercase tracking-wider text-[#1f5142]">
                 Lista de verificación técnica
             </h2>
+            <p class="report-meta">{{ $report->category->name }} · {{ count($checklist) }} verificaciones</p>
 
             @foreach ($checklist as $itemKey => $itemLabel)
                 <div class="checklist-item flex flex-col gap-2 bg-white/95 rounded-2xl border border-[#d5e8e0] shadow-[0_8px_30px_rgba(6,46,36,0.04)] p-6 text-[#062e24] transition duration-200 sm:flex-row sm:items-center sm:justify-between"
@@ -117,10 +122,14 @@
                 Foto de verificación <span class="text-rose-500">*</span>
             </h2>
 
+            <div class="citizen-photo-actions">
+                <button type="button" class="btn-primary" data-verification-camera hidden><x-icon name="camera" />Tomar foto</button>
+                <button type="button" class="btn-secondary" data-verification-gallery hidden>Elegir foto guardada</button>
+            </div>
             <label for="verification_photo"
                    class="block cursor-pointer overflow-hidden rounded-2xl border border-dashed border-[#b9daca] bg-white text-[#062e24] transition duration-200 hover:border-[#087b5f]">
                 <input id="verification_photo" name="verification_photo" type="file"
-                       accept="image/*" capture="environment" class="hidden" data-photo-input required>
+                       accept="image/jpeg,image/png,image/webp" class="sr-only" data-photo-input required>
                 <div class="flex flex-col items-center gap-2 p-6 text-center" data-photo-placeholder>
                     <span class="grid size-14 place-items-center rounded-2xl bg-[#e8f8f0] text-2xl">📸</span>
                     <span class="text-sm font-medium text-[#062e24]">Foto actual del estado de la obra</span>
@@ -136,7 +145,7 @@
                 <div>
                     <p class="text-sm font-medium text-[#062e24]">Posición GPS del inspector <span class="text-rose-500">*</span></p>
                     <p class="text-xs text-[#5d7d70]" data-gps-status>
-                        Captura tu ubicación desde el lugar de la obra. Si el GPS no responde, escribe las coordenadas.
+                        Captura tu ubicación desde el lugar de la obra para verla en el mapa.
                     </p>
                 </div>
                 <button type="button" data-capture-gps
@@ -144,20 +153,9 @@
                     📡 Capturar GPS
                 </button>
             </div>
-            <div class="mt-3 field-grid">
-                <div>
-                    <label for="inspector-latitude" class="mb-1 block text-[11px] text-[#5d7d70]">Latitud</label>
-                    <input id="inspector-latitude" name="inspector_latitude" type="number" step="0.0000001" min="-90" max="90" required
-                           value="{{ old('inspector_latitude') }}" data-lat
-                           class="w-full rounded-xl border border-[#b9daca] bg-[#fcfdfd] px-3 py-2 font-mono text-sm text-[#062e24] outline-none transition focus:border-[#087b5f] focus:ring-2 focus:ring-[#087b5f]/20">
-                </div>
-                <div>
-                    <label for="inspector-longitude" class="mb-1 block text-[11px] text-[#5d7d70]">Longitud</label>
-                    <input id="inspector-longitude" name="inspector_longitude" type="number" step="0.0000001" min="-180" max="180" required
-                           value="{{ old('inspector_longitude') }}" data-lng
-                           class="w-full rounded-xl border border-[#b9daca] bg-[#fcfdfd] px-3 py-2 font-mono text-sm text-[#062e24] outline-none transition focus:border-[#087b5f] focus:ring-2 focus:ring-[#087b5f]/20">
-                </div>
-            </div>
+            <input id="inspector-latitude" name="inspector_latitude" type="hidden" value="{{ old('inspector_latitude') }}" data-lat>
+            <input id="inspector-longitude" name="inspector_longitude" type="hidden" value="{{ old('inspector_longitude') }}" data-lng>
+            <div id="inspector-location-map" class="inspector-location-map" data-inspector-map role="region" aria-label="Mapa de la ubicaci&#243;n del inspector" hidden></div>
         </section>
 
         {{-- Dictamen final --}}
@@ -195,6 +193,7 @@
 @endsection
 
 @push('scripts')
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
 <script>
     (function () {
         const form = document.getElementById('audit-form');
@@ -252,25 +251,6 @@
             rejectField.required = show;
         }
 
-        // ---------- GPS ----------
-        form.querySelector('[data-capture-gps]').addEventListener('click', () => {
-            const status = form.querySelector('[data-gps-status]');
-            if (!('geolocation' in navigator)) {
-                status.textContent = 'Tu navegador no soporta geolocalización.';
-                return;
-            }
-            status.textContent = 'Buscando señal GPS…';
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    form.querySelector('[data-lat]').value = pos.coords.latitude.toFixed(7);
-                    form.querySelector('[data-lng]').value = pos.coords.longitude.toFixed(7);
-                    status.textContent = '✓ Posición capturada con precisión de ' + Math.round(pos.coords.accuracy) + ' m.';
-                },
-                (err) => { status.textContent = 'GPS no disponible: ' + err.message + '. Captúralo de nuevo o escribe las coordenadas.'; },
-                { enableHighAccuracy: true, timeout: 12000 }
-            );
-        });
-
         // ---------- dictamen ----------
         form.querySelectorAll('[data-decide]').forEach((btn) => {
             btn.addEventListener('click', () => {
@@ -294,6 +274,9 @@
 
             if (unanswered > 0) {
                 return showError('Falta responder ' + unanswered + ' ítem(s) del checklist.');
+            }
+            if (decisionInput.value === 'approved' && anyRework()) {
+                return showError('Hay puntos que no cumplen. Corrige las respuestas o solicita reproceso.');
             }
             if (decisionInput.value === 'rework') {
                 if (!anyRework()) {
@@ -325,7 +308,28 @@
 
         // ---------- foto preview ----------
         const photoInput = form.querySelector('[data-photo-input]');
+        const cameraButton = form.querySelector('[data-verification-camera]');
+        const galleryButton = form.querySelector('[data-verification-gallery]');
+        cameraButton.hidden = false;
+        galleryButton.hidden = false;
+        cameraButton.addEventListener('click', () => {
+            photoInput.setAttribute('accept', 'image/*');
+            photoInput.setAttribute('capture', 'environment');
+            photoInput.click();
+        });
+        galleryButton.addEventListener('click', () => {
+            photoInput.removeAttribute('capture');
+            photoInput.setAttribute('accept', 'image/jpeg,image/png,image/webp');
+            photoInput.click();
+        });
+        photoInput.closest('label').addEventListener('click', (event) => {
+            if (event.target !== photoInput) {
+                photoInput.removeAttribute('capture');
+                photoInput.setAttribute('accept', 'image/jpeg,image/png,image/webp');
+            }
+        });
         photoInput.addEventListener('change', () => {
+            photoInput.removeAttribute('capture');
             const file = photoInput.files[0];
             if (!file) { return; }
             const img = form.querySelector('[data-photo-preview]');

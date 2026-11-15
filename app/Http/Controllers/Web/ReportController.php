@@ -64,7 +64,7 @@ final class ReportController extends Controller
         // Redirige a la vista de éxito con el ticket en sesión flash.
         return redirect()
             ->route('reports.success', ['ticket_code' => $report->ticket_code])
-            ->with('status', "Reporte registrado exitosamente. Tu número de radicado es {$report->ticket_code}.");
+            ->with('device_report_ticket', $report->ticket_code);
     }
 
     /**
@@ -168,7 +168,7 @@ final class ReportController extends Controller
             'done' => true,
         ];
 
-        if ($order->completion_date !== null) {
+        if ($order->completion_date !== null && $order->status !== WorkOrderStatus::InExecution) {
             $steps[] = [
                 'title' => 'Obra ejecutada por el contratista',
                 'detail' => (string) $order->work_description,
@@ -177,12 +177,13 @@ final class ReportController extends Controller
             ];
         } else {
             $steps[] = [
-                'title' => 'Ejecución de la obra',
+                'title' => $order->status === WorkOrderStatus::InExecution ? 'Obra en ejecución' : 'Ejecución de la obra',
                 'detail' => $order->status === WorkOrderStatus::Assigned
                     ? 'Pendiente que el contratista inicie'
                     : 'Trabajos en curso',
                 'at' => null,
                 'done' => false,
+                'active' => $order->status === WorkOrderStatus::InExecution,
             ];
         }
 

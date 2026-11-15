@@ -43,6 +43,8 @@ Route::middleware('guest')->group(function (): void {
 // autenticado, se vincula a su cuenta; si es invitado, se registran los
 // datos de contacto opcionales (citizen_name, citizen_phone, citizen_email).
 Route::prefix('reportes')->name('reports.')->group(function (): void {
+    Route::view('mis-reportes', 'reports.device')->name('device');
+
     Route::get('crear', [ReportController::class, 'create'])
         ->name('create');
 

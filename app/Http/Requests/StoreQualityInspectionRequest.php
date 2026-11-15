@@ -6,7 +6,6 @@ namespace App\Http\Requests;
 
 use App\Enums\UserRole;
 use App\Http\Requests\Concerns\SanitizesInput;
-use App\Rules\ChecklistAnswerIsScalar;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -56,6 +55,13 @@ final class StoreQualityInspectionRequest extends FormRequest
             'inspector_latitude',
             'inspector_longitude',
         ])));
+        $answers = $this->input('checklist_results');
+        if (is_array($answers)) {
+            $this->merge(['checklist_results' => array_map(
+                fn ($answer) => is_bool($answer) ? ($answer ? 'cumple' : 'no_cumple') : $answer,
+                $answers,
+            )]);
+        }
     }
 
     /**
@@ -65,15 +71,16 @@ final class StoreQualityInspectionRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        $checklist = $this->checklist();
+        $rules = [
             'decision' => ['required', 'in:approved,rework'],
             'checklist_results' => [
                 'required',
-                'array',
+                $checklist ? 'array:'.implode(',', array_keys($checklist)) : 'array',
                 'min:1',
                 'max:'.self::MAX_CHECKLIST_ITEMS,
             ],
-            'checklist_results.*' => [new ChecklistAnswerIsScalar],
+            'checklist_results.*' => ['required', 'in:cumple,no_cumple'],
             'rejection_reason' => ['required_if:decision,rework', 'nullable', 'string', 'min:20', 'max:1000'],
             'inspector_latitude' => ['required', 'numeric', 'between:-90,90'],
             'inspector_longitude' => ['required', 'numeric', 'between:-180,180'],
@@ -85,6 +92,36 @@ final class StoreQualityInspectionRequest extends FormRequest
                 'dimensions:max_width='.self::MAX_IMAGE_PIXELS.',max_height='.self::MAX_IMAGE_PIXELS,
             ],
         ];
+        foreach ($checklist as $key => $label) {
+            $rules['checklist_results.'.$key] = ['required', 'in:cumple,no_cumple'];
+        }
+        return $rules;
+    }
+
+    private function checklist(): array
+    {
+        $parameter = $this->route('workOrder');
+        $order = $parameter instanceof \App\Models\WorkOrder
+            ? $parameter
+            : \App\Models\WorkOrder::with('report.category')->find($parameter);
+        return $order?->report
+            ? \App\Support\InspectionChecklist::forCategory($order->report->category?->name)
+            : [];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator): void {
+            $answers = $this->input('checklist_results');
+            if (!is_array($answers)) return;
+            $failed = in_array('no_cumple', $answers, true);
+            if ($this->input('decision') === 'approved' && $failed) {
+                $validator->errors()->add('decision', 'No puedes aprobar una obra con puntos que no cumplen. Debes enviarla a reproceso.');
+            }
+            if ($this->input('decision') === 'rework' && !$failed) {
+                $validator->errors()->add('decision', 'Marca al menos un punto como «No cumple» para solicitar reproceso.');
+            }
+        });
     }
 
     /**
@@ -115,9 +152,11 @@ final class StoreQualityInspectionRequest extends FormRequest
             'decision.in' => 'La decisión debe ser "approved" (aprobada) o "rework" (rechazada).',
 
             'checklist_results.required' => 'Los resultados del checklist son obligatorios.',
-            'checklist_results.array' => 'Los resultados del checklist deben enviarse como un objeto JSON de pares "ítem": respuesta.',
             'checklist_results.min' => 'El checklist debe contener al menos :min ítem evaluado.',
             'checklist_results.max' => 'El checklist no puede superar los :max ítems.',
+            'checklist_results.array' => 'Responde únicamente las verificaciones correspondientes a la categoría del reporte.',
+            'checklist_results.*.required' => 'Responde todas las verificaciones de esta categoría.',
+            'checklist_results.*.in' => 'Cada verificación debe indicar «Cumple» o «No cumple».',
 
             'rejection_reason.required_if' => 'Si la decisión es "rework", debes justificar el rechazo por escrito.',
             'rejection_reason.string' => 'El motivo del rechazo debe ser texto.',

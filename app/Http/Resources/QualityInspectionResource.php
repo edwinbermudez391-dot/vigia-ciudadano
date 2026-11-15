@@ -24,6 +24,7 @@ final class QualityInspectionResource extends JsonResource
             'id' => $this->id,
             'decision' => $this->decision->value,
             'checklist_results' => $this->checklist_results,
+            'checklist_snapshot' => $this->checklist_snapshot,
             'rejection_reason' => $this->rejection_reason,
             'verification_photo_url' => $this->photoUrl($this->verification_photo_url),
             'inspector_latitude' => $this->inspector_latitude,

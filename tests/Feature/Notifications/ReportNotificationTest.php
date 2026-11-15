@@ -193,7 +193,7 @@ final class ReportNotificationTest extends TestCase
 
         $this->postJson("/api/v1/work-orders/{$order->id}/inspections", [
             'decision' => InspectionDecision::Approved->value,
-            'checklist_results' => ['superficie_uniforme' => true],
+            'checklist_results' => array_fill_keys(array_keys(\App\Support\InspectionChecklist::forCategory($report->category->name)), true),
             'inspector_latitude' => 4.570868,
             'inspector_longitude' => -74.297353,
             'verification_photo' => $this->imageUpload('verificacion.png'),
@@ -235,7 +235,7 @@ final class ReportNotificationTest extends TestCase
 
         $this->postJson("/api/v1/work-orders/{$order->id}/inspections", [
             'decision' => InspectionDecision::Rework->value,
-            'checklist_results' => ['superficie_uniforme' => false],
+            'checklist_results' => array_fill_keys(array_keys(\App\Support\InspectionChecklist::forCategory($report->category->name)), false),
             'rejection_reason' => $rejectionReason,
             'inspector_latitude' => 4.570868,
             'inspector_longitude' => -74.297353,

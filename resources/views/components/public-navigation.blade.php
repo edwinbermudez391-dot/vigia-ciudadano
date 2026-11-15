@@ -4,6 +4,6 @@
 <nav id="public-navigation" class="public-navigation" aria-label="Navegación principal">
     <x-nav-link :href="route('home')" :active="request()->routeIs('home')" icon="home">Inicio</x-nav-link>
     <x-nav-link :href="route('reports.create')" :active="request()->routeIs('reports.create')" icon="report">Reportar</x-nav-link>
-    <x-nav-link :href="route('home').'#consultar'" icon="search">Consultar</x-nav-link>
+    <x-nav-link :href="route('reports.device')" :active="request()->routeIs('reports.device')" icon="report">Mis reportes</x-nav-link>
 </nav>
 <a href="{{ route('login') }}" class="btn-primary public-login">Ingresar</a>

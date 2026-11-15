@@ -9,7 +9,7 @@ try {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(`${process.env.VIGIA_BASE_URL || 'http://127.0.0.1:8000'}/reportes/crear`);
-    await page.locator('[data-report-progress]').waitFor({ state: 'visible' });
+    await page.locator('[data-step-status]').waitFor({ state: 'visible' });
     const next = step => page.locator(`[data-report-step="${step}"] [data-step-next]`).click();
     await next(0);
     assert.equal(await page.locator('#category_id-error').isVisible(), true);
@@ -26,7 +26,7 @@ try {
         const input = document.querySelector('[data-photo-input]');
         input.files = transfer.files; input.dispatchEvent(new Event('change', { bubbles: true }));
     });
-    await page.getByText('Foto lista. Ajustamos el tamaño automáticamente.').waitFor();
+    await page.waitForFunction(() => document.querySelector('[data-photo-input]').files[0]?.name === 'foto-reporte.jpg');
     const prepared = await page.locator('[data-photo-input]').evaluate(async input => {
         const file = input.files[0];
         const image = await createImageBitmap(file);
@@ -39,25 +39,33 @@ try {
     await page.locator('[data-remove-photo]').click();
     assert.equal(await page.locator('[data-photo-input]').evaluate(input => input.files.length), 0);
     await next(0);
-    await page.locator('[data-coordinates]').evaluate(el => { el.open = true; });
-    await page.locator('#latitude').fill('3.0095');
-    await page.locator('#longitude').fill('-76.4849');
-    await page.locator('#address_reference').fill('Frente al parque');
+    assert.equal(await page.locator('[data-report-step="0"]').isVisible(), true);
+    assert.equal(await page.locator('#damage_photo-error').isVisible(), true);
+    await page.locator('[data-photo-input]').setInputFiles({ name: 'foto.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64') });
+    await page.waitForFunction(() => document.querySelector('[data-photo-input]').files[0]?.name === 'foto-reporte.jpg');
+    await next(0);
+    assert.equal(await page.locator('[data-address-search]').isVisible(), false);
+    assert.equal(await page.locator('[data-map-section]').isVisible(), false);
+    assert.equal(await page.locator('[data-location-options]').count(), 0);
+    await page.evaluate(() => Object.defineProperty(navigator, 'geolocation', { configurable: true, value: {
+        getCurrentPosition: ok => ok({ coords: { latitude: 3.0095, longitude: -76.4849, accuracy: 20 } }),
+    } }));
+    await page.locator('[data-geolocate]').click();
     await next(1);
     assert.equal(await page.locator('[data-report-step="1"]').isVisible(), true);
     await page.locator('[data-confirm-location]').click();
     await next(1);
     assert.equal(await page.locator('[data-review-description]').innerText(), 'Hay un hueco grande que dificulta el paso por el parque.');
-    assert.match(await page.locator('[data-review-location]').innerText(), /Frente al parque/);
+    assert.equal(await page.locator('[data-review-location]').innerText(), 'Tu ubicación');
     assert.equal(await page.locator('[data-report-step]:visible').count(), 1);
     await page.locator('[data-edit-step="0"]').click();
     assert.equal(await page.locator('#description').inputValue(), 'Hay un hueco grande que dificulta el paso por el parque.');
     await page.locator('#description').fill('Hay un hueco grande frente al parque que necesita reparación.');
     await next(0);
-    assert.equal(await page.locator('#address_reference').inputValue(), 'Frente al parque');
+    assert.equal(await page.locator('#latitude').inputValue(), '3.009500');
     await next(1);
     assert.equal(await page.locator('[data-review-description]').innerText(), 'Hay un hueco grande frente al parque que necesita reparación.');
-    assert.equal(await page.locator('#damage_photo').getAttribute('required'), null);
+    assert.notEqual(await page.locator('#damage_photo').getAttribute('required'), null);
     await page.locator('[data-edit-step="1"]').click();
     await page.evaluate(() => {
         Object.defineProperty(navigator, 'geolocation', { configurable: true, value: { getCurrentPosition: (_ok, fail) => fail({ code: 1 }) } });
@@ -78,25 +86,33 @@ try {
     await page.locator('[data-geolocate]').click();
     assert.equal(await page.locator('#latitude').inputValue(), '3.011000');
     assert.equal(await page.locator('#longitude').inputValue(), '-76.481000');
+    await page.locator('[data-confirm-location]').click();
     await next(1);
     assert.equal(await page.locator('[data-report-step="2"]').isVisible(), true);
     await page.locator('[data-edit-step="1"]').click();
-    await page.locator('[data-choose-address]').click();
-    await page.route('https://nominatim.openstreetmap.org/search?**', route => route.fulfill({ json: [
-        { display_name: 'Parque principal, Santander de Quilichao', lat: '3.01', lon: '-76.48' },
-    ] }));
-    await page.locator('#address-search').fill('Parque principal, Santander de Quilichao');
-    await page.locator('[data-find-address]').click();
-    await page.locator('[data-address-results] button').click();
-    assert.equal(await page.locator('[data-location-label]').innerText(), 'Parque principal, Santander de Quilichao');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+    assert.deepEqual(errors, []);
+    await page.goto(`${process.env.VIGIA_BASE_URL || 'http://127.0.0.1:8000'}/reportes/crear`);
+    await page.locator('[data-category]').first().check();
+    await page.locator('#description').fill('Hay un hueco grande que dificulta el paso.');
+    await page.locator('[data-photo-input]').setInputFiles({ name: 'foto.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64') });
+    await page.waitForFunction(() => document.querySelector('[data-photo-input]').files[0]?.name === 'foto-reporte.jpg');
+    await next(0);
+    await page.evaluate(() => Object.defineProperty(navigator, 'geolocation', { configurable: true, value: {
+        getCurrentPosition: ok => ok({ coords: { latitude: 3.011, longitude: -76.481, accuracy: 20 } }),
+    } }));
+    await page.locator('[data-geolocate]').click();
+    await page.getByRole('heading', { name: '¿El problema está aquí?' }).waitFor();
+    await page.locator('.leaflet-marker-icon').waitFor();
+    assert.equal(await page.locator('[data-map-section]').isVisible(), true);
+    assert.equal(await page.locator('[data-map-section]').evaluate(el => el.open), true);
+    assert.equal(await page.locator('[data-confirm-location]').isVisible(), true);
     await next(1);
     assert.equal(await page.locator('[data-report-step="1"]').isVisible(), true);
     await page.locator('[data-confirm-location]').click();
     await next(1);
-    assert.match(await page.locator('[data-review-location]').innerText(), /Parque principal, Santander de Quilichao/);
-    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
-    assert.deepEqual(errors, []);
-    console.log('PASS: validaciÃ³n, tres pasos, resumen, correcciones, foto opcional y ancho mÃ³vil.');
+    assert.equal(await page.locator('[data-report-step="2"]').isVisible(), true);
+    console.log('PASS: required photo, automatic resizing, report steps, GPS and mobile layout.');
 } finally {
     await browser.close();
 }

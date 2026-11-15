@@ -172,7 +172,7 @@ final class IncidentLifecycleApiTest extends TestCase
 
         $this->postJson("/api/v1/work-orders/{$order->id}/inspections", [
             'decision' => InspectionDecision::Rework->value,
-            'checklist_results' => ['superficie_uniforme' => false, 'pendiente_correcta' => 2],
+            'checklist_results' => array_replace(array_fill_keys(array_keys(\App\Support\InspectionChecklist::forCategory($report->category->name)), 'cumple'), ['superficie_uniforme' => 'no_cumple']),
             'rejection_reason' => 'El material aplicado no selló la junta con la carpeta existente.',
             'inspector_latitude' => 4.570868,
             'inspector_longitude' => -74.297353,
@@ -203,7 +203,7 @@ final class IncidentLifecycleApiTest extends TestCase
 
         $this->postJson("/api/v1/work-orders/{$order->id}/inspections", [
             'decision' => InspectionDecision::Approved->value,
-            'checklist_results' => ['superficie_uniforme' => true, 'pendiente_correcta' => true],
+            'checklist_results' => array_fill_keys(array_keys(\App\Support\InspectionChecklist::forCategory($report->category->name)), true),
             'inspector_latitude' => 4.570868,
             'inspector_longitude' => -74.297353,
             'verification_photo' => $this->imageUpload('verificacion.png'),
