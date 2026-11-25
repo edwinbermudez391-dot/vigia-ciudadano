@@ -12,13 +12,18 @@ use App\Exceptions\WorkAssignmentException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AssignWorkOrderRequest;
 use App\Http\Requests\StoreContractorRequest;
+use App\Http\Requests\UpdateContractorRequest;
 use App\Models\Department;
 use App\Models\QualityInspection;
 use App\Models\Report;
 use App\Models\User;
 use App\Models\WorkOrder;
 use App\Services\WorkOrderDispatcher;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 /**
@@ -31,12 +36,16 @@ final class AdminController extends Controller
         private readonly WorkOrderDispatcher $dispatcher,
     ) {}
 
-    public function dashboard(\Illuminate\Http\Request $request): View
+    public function dashboard(\Illuminate\Http\Request $request): View|RedirectResponse
     {
-        $filters = $request->validate([
-            'q' => ['nullable', 'string', 'max:150'],
-            'status' => ['nullable', \Illuminate\Validation\Rule::enum(ReportStatus::class)],
+        $reportQuery = $request->only([
+            'q', 'status', 'grupo', 'page',
+            ...array_map(fn (ReportStatus $status) => 'page_'.$status->value, ReportStatus::cases()),
         ]);
+        if ($reportQuery !== []) {
+            return redirect()->route('admin.reports', $reportQuery);
+        }
+
         $stats = [
             'total' => Report::query()->count(),
             'pending' => Report::query()->status(ReportStatus::Reported)->count(),
@@ -58,26 +67,6 @@ final class AdminController extends Controller
                 ->count(),
         ];
 
-        $recent = Report::query()
-            ->with(['category:id,name', 'workOrder:id,report_id,status,contractor_id'])
-            ->when($filters['q'] ?? null, function ($query, $search): void {
-                $query->where(function ($query) use ($search): void {
-                    $query->where('title', 'like', '%'.$search.'%')
-                        ->orWhere('ticket_code', 'like', '%'.$search.'%');
-                });
-            })
-            ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
-            // FCFS: los reportes conservan su turno por fecha de llegada.
-            ->orderBy('created_at')
-            ->orderBy('id')
-            ->paginate(10)
-            ->withQueryString();
-
-        // Inyección para los modales "Asignar Cuadrilla" del dashboard:
-        // solo cuadrillas activas (la elegibilidad de fondo la re-valida
-        // WorkOrderDispatcher al enviar, ante carreras entre pantallas).
-        $contractors = $this->assignableContractors();
-
         $dictamenes = [
             'total' => QualityInspection::query()->count(),
             'rework' => QualityInspection::query()
@@ -85,7 +74,65 @@ final class AdminController extends Controller
                 ->count(),
         ];
 
-        return view('admin.dashboard', compact('stats', 'recent', 'dictamenes', 'contractors'));
+        return view('admin.dashboard', compact('stats', 'dictamenes'));
+    }
+
+    public function reports(\Illuminate\Http\Request $request): View
+    {
+        $filters = $request->validate([
+            'q' => ['nullable', 'string', 'max:150'],
+            'status' => ['nullable', \Illuminate\Validation\Rule::enum(ReportStatus::class)],
+        ]);
+
+        $reports = Report::query()
+            ->when($filters['q'] ?? null, function ($query, $search): void {
+                $query->where(function ($query) use ($search): void {
+                    $query->where('title', 'like', '%'.$search.'%')
+                        ->orWhere('ticket_code', 'like', '%'.$search.'%');
+                });
+            });
+
+        $selectedStatus = isset($filters['status']) ? ReportStatus::from($filters['status']) : null;
+        $openStatus = $selectedStatus?->value ?? $request->query('grupo');
+        $statuses = $selectedStatus ? [$selectedStatus] : ReportStatus::cases();
+        $totalsByStatus = (clone $reports)->toBase()
+            ->selectRaw('status, COUNT(*) AS total')
+            ->whereIn('status', array_column($statuses, 'value'))
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $perPage = 10;
+        $reportGroups = [];
+        foreach ($statuses as $status) {
+            $total = (int) $totalsByStatus->get($status->value, 0);
+            if ($total === 0) {
+                continue;
+            }
+
+            // Each queue advances independently. Filtered URLs keep using ?page=.
+            $pageName = $selectedStatus ? 'page' : 'page_'.$status->value;
+            $page = min(Paginator::resolveCurrentPage($pageName), (int) ceil($total / $perPage));
+
+            $reportGroups[$status->value] = (clone $reports)
+                ->with('category:id,name')
+                ->status($status)
+                ->orderBy('created_at')
+                ->orderBy('id')
+                ->paginate($perPage, pageName: $pageName, page: $page, total: $total)
+                ->withQueryString()
+                ->appends('grupo', $status->value)
+                ->fragment('reportes-'.$status->value);
+        }
+
+        $openStatus = is_string($openStatus) && isset($reportGroups[$openStatus]) ? $openStatus : array_key_first($reportGroups);
+        $totalReports = $totalsByStatus->sum();
+
+        // Inyección para los modales "Asignar Cuadrilla" del dashboard:
+        // solo cuadrillas activas (la elegibilidad de fondo la re-valida
+        // WorkOrderDispatcher al enviar, ante carreras entre pantallas).
+        $contractors = $this->assignableContractors();
+
+        return view('admin.reports', compact('reportGroups', 'openStatus', 'totalReports', 'contractors'));
     }
 
     /**
@@ -122,7 +169,9 @@ final class AdminController extends Controller
     {
         $contractors = User::query()
             ->where('role', UserRole::Contractor->value)
+            ->whereNull('contractor_archived_at')
             ->with('department:id,name')
+            ->withExists(['workOrders', 'reports', 'qualityInspections'])
             ->withCount(['workOrders as active_orders_count' => fn ($q) => $q->whereIn('status', [
                 WorkOrderStatus::Assigned->value,
                 WorkOrderStatus::InExecution->value,
@@ -158,6 +207,87 @@ final class AdminController extends Controller
         return redirect()
             ->route('admin.contractors')
             ->with('status', "Cuadrilla «{$contractor->name}» registrada y habilitada para recibir despachos.");
+    }
+
+    public function editContractor(User $contractor): View
+    {
+        abort_unless($contractor->isContractor() && $contractor->contractor_archived_at === null, 404);
+
+        $departments = Department::query()
+            ->where(fn ($query) => $query->where('is_active', true)->orWhere('id', $contractor->department_id))
+            ->orderBy('name')
+            ->get(['id', 'name', 'is_active']);
+
+        return view('admin.contractors-edit', compact('contractor', 'departments'));
+    }
+
+    public function updateContractor(UpdateContractorRequest $request, User $contractor): RedirectResponse
+    {
+        $password = $request->validated('password');
+        $details = $request->safe()->only(['name', 'email', 'phone', 'department_id']);
+
+        try {
+            DB::transaction(function () use ($contractor, $details, $password): void {
+                $account = User::query()
+                    ->where('role', UserRole::Contractor->value)
+                    ->whereNull('contractor_archived_at')
+                    ->lockForUpdate()
+                    ->findOrFail($contractor->id);
+
+                $account->fill($details);
+                if ($password !== null) {
+                    $account->password = $password;
+                    $account->setRememberToken(null);
+                }
+                $account->save();
+
+                if ($password !== null) {
+                    $account->tokens()->delete();
+                    if (config('session.driver') === 'database') {
+                        DB::connection(config('session.connection'))
+                            ->table(config('session.table'))
+                            ->where('user_id', $account->id)
+                            ->delete();
+                    }
+                }
+            });
+        } catch (UniqueConstraintViolationException) {
+            throw ValidationException::withMessages(['email' => 'Ya existe un usuario registrado con ese correo.']);
+        }
+
+        return redirect()->route('admin.contractors')
+            ->with('status', $password !== null
+                ? 'Se actualizaron los datos y la contraseña del contratista.'
+                : 'Se actualizaron los datos del contratista.');
+    }
+
+    public function destroyContractor(string $contractor): RedirectResponse
+    {
+        $message = DB::transaction(function () use ($contractor): string {
+            $account = User::query()
+                ->where('role', UserRole::Contractor->value)
+                ->whereNull('contractor_archived_at')
+                ->lockForUpdate()
+                ->findOrFail($contractor);
+
+            $account->tokens()->delete();
+
+            if ($account->workOrders()->exists() || $account->reports()->exists() || $account->qualityInspections()->exists()) {
+                $account->forceFill([
+                    'is_active' => false,
+                    'remember_token' => null,
+                    'contractor_archived_at' => now(),
+                ])->save();
+
+                return "Se retiró la cuenta de «{$account->name}». Su historial quedó disponible para Alcaldía.";
+            }
+
+            $account->delete();
+
+            return "Se eliminó la cuenta de «{$account->name}».";
+        });
+
+        return redirect()->route('admin.contractors')->with('status', $message);
     }
 
     /**
@@ -401,20 +531,21 @@ final class AdminController extends Controller
     {
         $departmentId = $departmentId ? (int) $departmentId : null;
 
+        $ordersInPeriod = fn ($query) => $query->whereBetween('created_at', [$dateRange['start'], $dateRange['end']]);
         $contractors = User::query()
             ->where('role', UserRole::Contractor->value)
-            ->where('is_active', true);
+            ->where(function ($query) use ($ordersInPeriod): void {
+                $query->where('is_active', true)
+                    ->orWhere(fn ($query) => $query->whereNotNull('contractor_archived_at')->whereHas('workOrders', $ordersInPeriod));
+            })
+            ->with(['workOrders' => fn ($query) => $ordersInPeriod($query)->with(['report.category', 'qualityInspections'])]);
 
         if ($departmentId) {
             $contractors->where('department_id', $departmentId);
         }
 
-        return $contractors->get()->map(function($contractor) use ($dateRange) {
-            $workOrders = WorkOrder::query()
-                ->where('contractor_id', $contractor->id)
-                ->whereBetween('created_at', [$dateRange['start'], $dateRange['end']])
-                ->with(['report.category', 'qualityInspections'])
-                ->get();
+        return $contractors->get()->map(function (User $contractor) {
+            $workOrders = $contractor->workOrders;
 
             $assigned = $workOrders->count();
             $completed = $workOrders->where('status', WorkOrderStatus::Completed->value)->count();
@@ -442,6 +573,7 @@ final class AdminController extends Controller
 
             return [
                 'name' => $contractor->name,
+                'archived' => $contractor->contractor_archived_at !== null,
                 'assigned' => $assigned,
                 'completed' => $completed,
                 'on_time' => $onTime,

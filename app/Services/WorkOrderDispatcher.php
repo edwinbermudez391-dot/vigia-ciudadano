@@ -37,18 +37,21 @@ final class WorkOrderDispatcher
         string $scheduledDate,
         ?string $instructions = null,
     ): WorkOrder {
-        $this->assertAssignable($report, $contractor);
+        return DB::transaction(function () use ($report, $contractor, $scheduledDate, $instructions): WorkOrder {
+            $currentContractor = User::query()->lockForUpdate()->find($contractor->id);
+            $this->assertAssignable($report, $currentContractor);
 
-        return DB::transaction(fn (): WorkOrder => $this->persist($report, $contractor, $scheduledDate, $instructions));
+            return $this->persist($report, $currentContractor, $scheduledDate, $instructions);
+        });
     }
 
-    private function assertAssignable(Report $report, User $contractor): void
+    private function assertAssignable(Report $report, ?User $contractor): void
     {
         if (! in_array($report->status, self::ASSIGNABLE_REPORT_STATES, true)) {
             throw WorkAssignmentException::reportNotAssignable($report->status->value);
         }
 
-        if ($contractor->role !== UserRole::Contractor || $contractor->is_active !== true) {
+        if (! $contractor || $contractor->role !== UserRole::Contractor || $contractor->is_active !== true) {
             throw WorkAssignmentException::contractorNotEligible();
         }
     }
@@ -60,6 +63,7 @@ final class WorkOrderDispatcher
             [
                 'contractor_id' => $contractor->id,
                 'scheduled_date' => $scheduledDate,
+                'assigned_at' => now(),
                 'status' => WorkOrderStatus::Assigned->value,
                 // Instrucciones del despacho viajan con la orden; en API el
                 // canal pasa null y se conserva el comportamiento antiguo de

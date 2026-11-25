@@ -43,7 +43,7 @@ Route::middleware('guest')->group(function (): void {
 // autenticado, se vincula a su cuenta; si es invitado, se registran los
 // datos de contacto opcionales (citizen_name, citizen_phone, citizen_email).
 Route::prefix('reportes')->name('reports.')->group(function (): void {
-    Route::view('mis-reportes', 'reports.device')->name('device');
+    Route::get('mis-reportes', [ReportController::class, 'device'])->name('device');
 
     Route::get('crear', [ReportController::class, 'create'])
         ->name('create');
@@ -109,6 +109,8 @@ Route::middleware('auth')->group(function (): void {
         ->group(function (): void {
             Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
 
+            Route::get('reportes', [AdminController::class, 'reports'])->name('reports');
+
             Route::get('analitica', [AdminController::class, 'analytics'])->name('analytics');
 
             Route::post('incidencias/{report}/asignar', [AdminController::class, 'assign'])
@@ -119,5 +121,14 @@ Route::middleware('auth')->group(function (): void {
 
             Route::post('contratistas', [AdminController::class, 'storeContractor'])
                 ->name('contractors.store');
+            Route::get('contratistas/{contractor}/editar', [AdminController::class, 'editContractor'])
+                ->whereNumber('contractor')
+                ->name('contractors.edit');
+            Route::patch('contratistas/{contractor}', [AdminController::class, 'updateContractor'])
+                ->whereNumber('contractor')
+                ->name('contractors.update');
+            Route::delete('contratistas/{contractor}', [AdminController::class, 'destroyContractor'])
+                ->whereNumber('contractor')
+                ->name('contractors.destroy');
         });
 });

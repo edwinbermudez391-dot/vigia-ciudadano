@@ -1,4 +1,4 @@
-@props(['id' => 'consultar'])
+@props(['id' => 'consultar', 'action' => route('home')])
 @php
     $enteredCode = is_string(request('radicado')) ? mb_strtoupper(trim(request('radicado'))) : '';
     $validCode = preg_match('/^REP-\d{4}-\d{4,5}$/', $enteredCode) === 1;
@@ -6,7 +6,7 @@
 <section id="{{ $id }}" class="citizen-card citizen-lookup" aria-labelledby="{{ $id }}-title">
     <h2 id="{{ $id }}-title" tabindex="-1">Consulta tu reporte</h2>
     <p id="{{ $id }}-help">Escribe el número que recibiste al reportar.</p>
-    <form method="GET" action="{{ route('home') }}#{{ $id }}" data-report-lookup data-detail-url="{{ route('reports.show', '__CODE__') }}">
+    <form method="GET" action="{{ $action }}#{{ $id }}" data-report-lookup data-detail-url="{{ route('reports.show', '__CODE__') }}">
         <label for="{{ $id }}-code">Número de reporte (radicado)</label>
         <div class="citizen-lookup-controls">
             <input id="{{ $id }}-code" name="radicado" type="text" value="{{ $enteredCode }}" required maxlength="20"

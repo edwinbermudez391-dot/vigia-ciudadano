@@ -30,7 +30,7 @@
 <div class="report-detail-page space-y-6">
     <x-page-heading title="Detalle del reporte" description="Estado, fotos e historial de atención.">
         @if (auth()->user()?->isSuperAdmin())
-            <x-button :href="route('admin.dashboard').'#reportes'" variant="secondary">Volver a reportes</x-button>
+            <x-button :href="route('admin.reports')" variant="secondary">Volver a reportes</x-button>
         @elseif (auth()->user()?->isContractor())
             <x-button :href="route('contractor.orders')" variant="secondary">Volver a mis órdenes</x-button>
         @endif
@@ -62,7 +62,7 @@
                         data-report-id="{{ $report->id }}"
                         data-action="{{ route('admin.assign', $report) }}"
                         data-label="{{ $report->ticket_code }} — {{ $report->title }}"
-                        class="ml-auto bg-white hover:bg-[#f0faf5] text-[#062e24] border border-[#d5e8e0] font-semibold px-4 py-2.5 rounded-xl transition text-sm">
+                        class="btn-secondary ml-auto px-4 py-2.5 text-sm transition">
                     👷 Asignar Cuadrilla
                 </button>
             @endif
@@ -119,14 +119,14 @@
                     @csrf
                     @method('PATCH')
                     <button type="submit"
-                            class="bg-[#087b5f] hover:bg-[#05664e] text-white font-bold px-4 py-2.5 rounded-xl shadow-sm transition active:scale-[0.98] whitespace-nowrap">
+                            class="btn-primary px-4 py-2.5 font-bold transition active:scale-[0.98]">
                         Iniciar trabajo
                     </button>
                 </form>
             </div>
         </section>
     @elseif ($crewOrder && $workOrder->status === \App\Enums\WorkOrderStatus::InExecution)
-        <section class="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-5 text-[#062e24] shadow-sm">
+        <section class="rounded-2xl border-2 border-blue-200 bg-white p-5 text-[#062e24] shadow-sm">
             <h2 class="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-emerald-700">
                 Finalizar obra
             </h2>
@@ -172,7 +172,7 @@
                 </div>
 
                 <button type="submit"
-                        class="w-full bg-[#087b5f] hover:bg-[#05664e] text-white font-bold px-4 py-2.5 rounded-xl shadow-sm transition active:scale-[0.98] py-4 text-base sm:w-auto">
+                        class="btn-primary w-full px-4 py-4 text-base font-bold transition active:scale-[0.98] sm:w-auto">
                     Enviar a inspección
                 </button>
             </form>

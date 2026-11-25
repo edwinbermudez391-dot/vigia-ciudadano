@@ -15,7 +15,10 @@ use App\Models\Report;
 use App\Models\User;
 use App\Services\ReportIntake;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\View\View;
 
 /**
@@ -33,12 +36,18 @@ use Illuminate\View\View;
  */
 final class ReportController extends Controller
 {
+    private const DEVICE_COOKIE = 'vigia_device_reports';
+
     public function __construct(
         private readonly ReportIntake $intake,
     ) {}
 
-    public function create(): View
+    public function create(Request $request): View
     {
+        if ($this->deviceToken($request) === null) {
+            $this->rememberDevice($request, bin2hex(random_bytes(32)));
+        }
+
         $categories = Category::query()
             ->with('department')
             ->where('is_active', true)
@@ -59,12 +68,48 @@ final class ReportController extends Controller
         $data['address_reference'] = mb_substr(implode(' · ', array_filter([
             $data['location_label'] ?? '', $data['address_reference'] ?? '',
         ])), 0, 255);
-        $report = $this->intake->create($data, $photo, $request->user());
+        $token = $this->deviceToken($request) ?? bin2hex(random_bytes(32));
+        $report = $this->intake->create($data, $photo, $request->user(), hash('sha256', $token));
+        $this->rememberDevice($request, $token);
 
         // Redirige a la vista de éxito con el ticket en sesión flash.
         return redirect()
             ->route('reports.success', ['ticket_code' => $report->ticket_code])
             ->with('device_report_ticket', $report->ticket_code);
+    }
+
+    public function device(Request $request): Response
+    {
+        $token = $this->deviceToken($request);
+        $reports = $token === null ? collect() : Report::query()
+            ->where('device_token_hash', hash('sha256', $token))
+            ->latest('created_at')
+            ->orderByDesc('id')
+            ->get(['ticket_code', 'created_at']);
+
+        if ($token !== null && $reports->isNotEmpty()) {
+            $this->rememberDevice($request, $token);
+        }
+
+        return response()->view('reports.device', compact('reports'), headers: ['Cache-Control' => 'private, no-store']);
+    }
+
+    private function deviceToken(Request $request): ?string
+    {
+        $token = $request->cookie(self::DEVICE_COOKIE);
+
+        return is_string($token) && preg_match('/\A[a-f0-9]{64}\z/', $token) === 1 ? $token : null;
+    }
+
+    private function rememberDevice(Request $request, string $token): void
+    {
+        Cookie::queue(Cookie::forever(
+            self::DEVICE_COOKIE,
+            $token,
+            path: $request->getBasePath().'/reportes',
+            secure: $request->isSecure() || (bool) config('session.secure'),
+            sameSite: 'lax',
+        ));
     }
 
     /**

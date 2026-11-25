@@ -70,19 +70,11 @@
 
                     <div class="checklist-options">
                         <button type="button" data-answer="cumple" aria-pressed="{{ $items->get($itemKey) === 'cumple' ? 'true' : 'false' }}"
-                                @class([
-                                    'rounded-xl border px-4 py-4 text-sm font-bold uppercase tracking-wide transition duration-200 active:scale-[0.98]',
-                                    'border-emerald-500 bg-emerald-500 text-white shadow-lg shadow-emerald-500/25' => $items->get($itemKey) === 'cumple',
-                                    'border-[#b9daca] bg-[#fcfdfd] text-[#5d7d70] hover:border-emerald-300 hover:text-emerald-600' => $items->get($itemKey) !== 'cumple',
-                                ])>
+                                class="btn-secondary transition duration-200 active:scale-[0.98]">
                             Cumple
                         </button>
                         <button type="button" data-answer="no_cumple" aria-pressed="{{ $items->get($itemKey) === 'no_cumple' ? 'true' : 'false' }}"
-                                @class([
-                                    'rounded-xl border px-4 py-4 text-sm font-bold uppercase tracking-wide transition duration-200 active:scale-[0.98]',
-                                    'border-rose-500 bg-rose-500 text-white shadow-lg shadow-rose-500/25' => $items->get($itemKey) === 'no_cumple',
-                                    'border-[#b9daca] bg-[#fcfdfd] text-[#5d7d70] hover:border-rose-300 hover:text-rose-600' => $items->get($itemKey) !== 'no_cumple',
-                                ])>
+                                class="btn-secondary transition duration-200 active:scale-[0.98]">
                             No cumple
                         </button>
                     </div>
@@ -149,7 +141,7 @@
                     </p>
                 </div>
                 <button type="button" data-capture-gps
-                        class="bg-white hover:bg-[#f0faf5] text-[#062e24] border border-[#d5e8e0] font-semibold px-4 py-2.5 rounded-xl transition text-xs">
+                        class="btn-secondary px-4 py-2.5 text-xs transition">
                     📡 Capturar GPS
                 </button>
             </div>
@@ -172,7 +164,7 @@
                     <p id="approve-help" class="field-help">Obra conforme: cierra el reporte.</p>
                 </div>
                 <div>
-                    <button type="button" data-decide="rework" aria-describedby="rework-help" class="btn w-full bg-rose-700 text-white hover:bg-rose-800">Solicitar correcciones</button>
+                    <button type="button" data-decide="rework" aria-describedby="rework-help" class="btn-secondary w-full">Solicitar correcciones</button>
                     <p id="rework-help" class="field-help">Devuelve la orden al contratista.</p>
                 </div>
             </div>
@@ -206,16 +198,12 @@
         form.querySelectorAll('.checklist-item').forEach((item) => {
             const value = item.querySelector('[data-checklist-value]');
 
-            item.querySelectorAll('[data-answer]').forEach((btn) => {
-                btn.addEventListener('click', () => {
-                    const answer = btn.dataset.answer;
-                    value.value = answer;
-
-                    item.querySelectorAll('[data-answer]').forEach((b) => {
-                        const active = b === btn;
-                        const good = b.dataset.answer === 'cumple';
-                        b.className = buttonClass(answer === b.dataset.answer, active, good);
-                        b.setAttribute('aria-pressed', String(active));
+            const buttons = item.querySelectorAll('[data-answer]');
+            buttons.forEach((button) => {
+                button.addEventListener('click', () => {
+                    value.value = button.dataset.answer;
+                    buttons.forEach((option) => {
+                        option.setAttribute('aria-pressed', String(option === button));
                     });
 
                     syncReworkPanel();
@@ -223,20 +211,6 @@
                 });
             });
         });
-
-        function buttonClass(selected, active, good) {
-            const base = 'rounded-xl border px-4 py-4 text-sm font-bold uppercase tracking-wide transition duration-200 active:scale-[0.98] ';
-            if (!active) {
-                const hover = good
-                    ? 'hover:border-emerald-300 hover:text-emerald-600'
-                    : 'hover:border-rose-300 hover:text-rose-600';
-                return base + 'border-[#b9daca] bg-[#fcfdfd] text-[#5d7d70] ' + hover
-                    + '';
-            }
-            return good
-                ? base + 'border-emerald-500 bg-emerald-500 text-white shadow-lg shadow-emerald-500/25'
-                : base + 'border-rose-500 bg-rose-500 text-white shadow-lg shadow-rose-500/25';
-        }
 
         function anyRework() {
             return Array.from(form.querySelectorAll('[data-checklist-value]'))

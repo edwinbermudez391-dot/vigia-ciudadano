@@ -9,10 +9,10 @@
     <section class="citizen-card" aria-labelledby="receipt-title">
         <span class="success-icon"><x-icon name="check" /></span>
         <h1 id="receipt-title">¡Tu reporte fue recibido!</h1>
+        <p>Guarda este número para consultar el reporte desde cualquier navegador.</p>
+        <p id="ticket-code" class="citizen-number">{{ $report->ticket_code }}</p>
         <div class="citizen-actions citizen-no-print">
-            <a href="{{ route('reports.show', $report->ticket_code) }}" class="btn-secondary"><x-icon name="search" />Consultar mi reporte</a>
             <a href="{{ route('home') }}" class="btn-primary">Volver al inicio</a>
-            <a href="{{ route('reports.create') }}" class="btn-secondary">Reportar otro problema</a>
             <a href="{{ route('reports.device') }}" class="btn-secondary">Mis reportes en este dispositivo</a>
         </div>
         <p id="copy-feedback" class="citizen-help" role="status"></p>

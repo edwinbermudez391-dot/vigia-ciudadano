@@ -9,7 +9,6 @@
 <div class="citizen-content citizen-report-page">
     <header class="citizen-heading">
         <h1>Vamos a reportar un problema</h1>
-        <p>No necesitas una cuenta.</p>
     </header>
     <noscript><p class="citizen-notice">Puedes completar el formulario en esta página. Activa JavaScript para elegir el lugar del problema.</p></noscript>
     @if ($errors->any())
@@ -85,7 +84,7 @@
                 <x-citizen-field-error field="description" />
             </div>
             <div>
-                <p id="photo-title" class="citizen-label">Foto del problema (obligatoria)</p>
+                <p id="photo-title" class="citizen-label">Foto del problema </p>
                 <div class="citizen-photo-actions" role="group" aria-labelledby="photo-title">
                 <label for="damage_photo" class="citizen-photo-picker"><x-icon name="camera" /><span data-photo-label>Agregar foto</span>
                     <input id="damage_photo" name="damage_photo" type="file" accept="image/jpeg,image/png,image/webp"
@@ -109,11 +108,17 @@
             <input type="hidden" name="location_label" value="{{ old('location_label') }}" data-selected-place>
             <div class="citizen-location-choices">
                 <button type="button" class="btn-primary" data-geolocate hidden><x-icon name="map" /><span>Usar mi ubicación</span></button>
+                <button type="button" class="btn-secondary" data-open-map hidden>Elegir el lugar en el mapa</button>
             </div>
             <p id="location-status" class="citizen-notice" role="status" data-location-status>Elige una opción para ubicar el problema.</p>
             <details class="citizen-map-section" data-map-section hidden>
                 <summary>Ver mi ubicación en el mapa</summary>
-                <div id="map" class="citizen-location-map" role="region" aria-label="Mapa para señalar el problema"></div>
+                <p class="citizen-help">Si el punto no coincide, toca el lugar correcto o centra el mapa sobre él.</p>
+                <div class="citizen-map-target">
+                    <div id="map" class="citizen-location-map" role="region" aria-label="Mapa para señalar el problema"></div>
+                    <span class="citizen-map-crosshair" aria-hidden="true">+</span>
+                </div>
+                <button type="button" class="btn-secondary" data-use-map-center hidden>Marcar el centro del mapa</button>
             </details>
             <div class="citizen-notice" data-location-confirmation hidden>
                 <p data-location-label></p>

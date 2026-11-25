@@ -103,7 +103,7 @@
 
             <div class="mt-4 flex items-center justify-between">
                 <p class="text-sm text-slate-600">Fuente: reportes de la plataforma.</p>
-                <a href="{{ route('map') }}" class="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700">
+                <a href="{{ route('map') }}" class="btn-primary px-4 py-2 text-xs transition">
                     Ver mapa completo →
                 </a>
             </div>
@@ -111,7 +111,7 @@
     </section>
 
     {{-- ====================== ¿CÓMO FUNCIONA? (4 pasos) ====================== --}}
-    <section id="como-funciona" class="public-section scroll-mt-24 border-y border-emerald-100 bg-emerald-50/40">
+    <section id="como-funciona" class="public-section scroll-mt-24 border-y border-emerald-100 bg-white">
         <div class="public-section-inner">
             <div class="max-w-2xl">
                 <h2 class="font-semibold text-slate-900">Cómo funciona</h2>
@@ -151,15 +151,15 @@
                     {{-- Pestañas Antes / Durante / Después --}}
                     <div role="tablist" aria-label="Momentos de la evidencia" class="mt-7 inline-flex rounded-xl bg-white/10 p-1">
                         <button id="tab-antes" type="button" role="tab" data-tab-btn="antes" data-state="active" aria-selected="true" aria-controls="card-dano"
-                                class="rounded-lg px-4 py-2 text-sm text-emerald-50/70 transition duration-200 hover:text-white data-[state=active]:bg-white data-[state=active]:font-semibold data-[state=active]:text-emerald-900 data-[state=active]:shadow-sm">
+                                class="btn-secondary px-4 py-2 text-sm transition duration-200">
                             Antes
                         </button>
                         <button id="tab-durante" type="button" role="tab" data-tab-btn="durante" aria-selected="false" aria-controls="card-obra"
-                                class="rounded-lg px-4 py-2 text-sm text-emerald-50/70 transition duration-200 hover:text-white data-[state=active]:bg-white data-[state=active]:font-semibold data-[state=active]:text-emerald-900 data-[state=active]:shadow-sm">
+                                class="btn-secondary px-4 py-2 text-sm transition duration-200">
                             Durante
                         </button>
                         <button id="tab-despues" type="button" role="tab" data-tab-btn="despues" aria-selected="false" aria-controls="card-sello"
-                                class="rounded-lg px-4 py-2 text-sm text-emerald-50/70 transition duration-200 hover:text-white data-[state=active]:bg-white data-[state=active]:font-semibold data-[state=active]:text-emerald-900 data-[state=active]:shadow-sm">
+                                class="btn-secondary px-4 py-2 text-sm transition duration-200">
                             Después
                         </button>
                     </div>
@@ -274,7 +274,7 @@
             fn (int $v, int $i) => round($xAt($i), 1) . ',' . round($yAt($v), 1), $s, array_keys($s)
         )) . ' L' . round($xAt(6), 1) . ',' . round($chartH - $padBottom, 1) . ' L' . round($xAt(0), 1) . ',' . round($chartH - $padBottom, 1) . ' Z';
     @endphp
-    <section id="metricas" class="public-section scroll-mt-24 border-y border-emerald-100 bg-emerald-50/40">
+    <section id="metricas" class="public-section scroll-mt-24 border-y border-emerald-100 bg-white">
         <div class="public-section-inner">
             <div class="max-w-2xl">
                 <h2 class="font-semibold text-slate-900">Resultados del municipio</h2>
@@ -392,7 +392,7 @@
                     Solo para personal de la entidad, contratistas e inspectores con cuenta habilitada.
                 </p>
                 <a href="{{ route('login') }}"
-                   class="mt-7 inline-flex rounded-xl bg-white px-6 py-3 text-sm font-semibold text-emerald-700 shadow-md transition duration-200 hover:bg-emerald-50 hover:scale-[1.01] active:scale-[0.98]">
+                   class="btn-secondary mt-7 px-6 py-3 text-sm transition duration-200 active:scale-[0.98]">
                     Ingresar
                 </a>
             </div>
@@ -558,7 +558,7 @@
             function buildPopup(r) {
                 var photoHtml = r.photo_url
                     ? '<img src="' + escHtml(r.photo_url) + '" alt="Evidencia" style="width:100%;height:110px;object-fit:cover;border-radius:8px 8px 0 0;" loading="lazy">'
-                    : '<div style="width:100%;height:60px;background:#f0faf5;display:flex;align-items:center;justify-content:center;border-radius:8px 8px 0 0;"><span style="font-size:24px;">📷</span></div>';
+                    : '<div style="width:100%;height:60px;background:var(--color-action-soft);display:flex;align-items:center;justify-content:center;border-radius:8px 8px 0 0;"><span style="font-size:24px;">📷</span></div>';
 
                 var badgeColors = {
                     'reported': { bg: '#fef9c3', text: '#854d0e' },
@@ -576,7 +576,7 @@
                     + '<p style="font-size:18px;font-weight:700;color:#172b43;margin:8px 0;line-height:1.4;">' + escHtml(r.title) + '</p>'
                     + '<p style="font-size:16px;color:#4c6075;margin:0;">' + escHtml(r.category_name) + '</p>'
                     + '<span style="display:inline-block;padding:4px 8px;border-radius:9999px;font-size:16px;font-weight:600;margin-top:8px;background:' + bc.bg + ';color:' + bc.text + ';">' + escHtml(r.status_label) + '</span>'
-                    + '<a href="' + escHtml(r.detail_url) + '" style="display:block;text-align:center;margin-top:12px;min-height:48px;padding:12px;background:#173d68;color:white;border-radius:8px;text-decoration:none;font-size:16px;font-weight:600;">Ver detalles</a>'
+                    + '<a href="' + escHtml(r.detail_url) + '" class="map-popup-link btn-primary">Ver detalles</a>'
                     + '</div></div>';
             }
 

@@ -18,6 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
             headers: \Illuminate\Http\Request::HEADER_X_FORWARDED_PROTO,
         );
 
+        $middleware->append(\App\Http\Middleware\UseBuiltViteAssets::class);
+
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureUserHasRole::class,
         ]);

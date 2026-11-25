@@ -23,6 +23,7 @@ class Report extends Model
      */
     protected $fillable = [
         'ticket_code',
+        'device_token_hash',
         'user_id',
         'citizen_name',
         'citizen_phone',
@@ -36,6 +37,8 @@ class Report extends Model
         'address_reference',
         'status',
     ];
+
+    protected $hidden = ['device_token_hash'];
 
     /**
      * Get the attributes that should be cast.

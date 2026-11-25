@@ -6,15 +6,18 @@ namespace App\Http\Controllers\Web;
 
 use App\Enums\InspectionDecision;
 use App\Enums\ReportStatus;
+use App\Enums\UserRole;
 use App\Enums\WorkOrderStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreQualityInspectionRequest;
 use App\Models\Report;
+use App\Models\User;
 use App\Models\WorkOrder;
 use App\Services\QualityInspectionRecorder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /**
@@ -33,15 +36,26 @@ final class InspectorController extends Controller
     public function queue(Request $request): View
     {
         $perPage = min(max($request->integer('per_page', 12), 1), 50);
+        $filters = $request->validate([
+            'cuadrilla' => ['nullable', 'integer', Rule::exists('users', 'id')->where('role', UserRole::Contractor->value)],
+        ]);
+        $crewId = isset($filters['cuadrilla']) ? (int) $filters['cuadrilla'] : null;
+        $contractors = User::query()->where('role', UserRole::Contractor)
+            ->orderBy('name')->orderBy('id')->get(['id', 'name']);
 
-        $reports = Report::query()
-            ->with(['category', 'workOrder.contractor', 'workOrder.qualityInspections'])
-            ->status(ReportStatus::UnderInspection)
-            ->orderBy('updated_at')
-            ->paginate($perPage)
-            ->withQueryString();
+        $queue = Report::query()
+            ->when($crewId, fn ($query) => $query->whereRelation('workOrder', 'contractor_id', $crewId))
+            ->with(['category', 'workOrder.contractor']);
+        $pagination = $request->only(['cuadrilla', 'per_page', 'page', 'page_cerrados']);
+        $pending = (clone $queue)->status(ReportStatus::UnderInspection)
+            ->with(['workOrder' => fn ($query) => $query->withCount('qualityInspections')])
+            ->orderBy('updated_at')->orderBy('id')
+            ->paginate($perPage)->appends($pagination)->fragment('pendientes');
+        $closedReports = $queue->status(ReportStatus::Closed)
+            ->orderByDesc('updated_at')->orderByDesc('id')
+            ->paginate($perPage, pageName: 'page_cerrados')->appends($pagination)->fragment('cerrados');
 
-        return view('inspector.queue', compact('reports'));
+        return view('inspector.queue', compact('pending', 'closedReports', 'crewId', 'contractors'));
     }
 
     public function audit(int $workOrder): View|RedirectResponse

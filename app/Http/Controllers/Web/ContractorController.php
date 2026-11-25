@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Web;
 
+use App\Enums\WorkOrderStatus;
 use App\Exceptions\WorkExecutionException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CompleteWorkOrderRequest;
@@ -11,6 +12,7 @@ use App\Models\WorkOrder;
 use App\Services\WorkOrderExecution;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\Paginator;
 use Illuminate\View\View;
 
 /**
@@ -34,17 +36,37 @@ final class ContractorController extends Controller
 
     public function orders(Request $request): View
     {
-        /** @var \App\Models\User $user */
-        $user = $request->user();
-
         $orders = WorkOrder::query()
-            ->where('contractor_id', $user->id)
-            ->with(['report:id,ticket_code,title,status,category_id', 'report.category:id,name'])
-            ->orderByRaw("CASE status WHEN 'in_execution' THEN 0 WHEN 'assigned' THEN 1 ELSE 2 END")
-            ->orderBy('scheduled_date')
-            ->paginate(15);
+            ->where('contractor_id', $request->user()->id);
+        $totals = (clone $orders)->toBase()->selectRaw('status, COUNT(*) AS total')
+            ->groupBy('status')->pluck('total', 'status');
+        $perPage = 15;
+        $groups = [];
+        foreach (WorkOrderStatus::cases() as $status) {
+            $count = (int) $totals->get($status->value, 0);
+            if ($count === 0) {
+                continue;
+            }
 
-        return view('contractor.orders', compact('orders'));
+            $pageName = 'page_'.$status->value;
+            $page = min(Paginator::resolveCurrentPage($pageName), (int) ceil($count / $perPage));
+            $groups[$status->value] = (clone $orders)->where('status', $status)
+                ->with(['report:id,ticket_code,title,address_reference,category_id', 'report.category:id,name'])
+                ->when($status === WorkOrderStatus::Assigned,
+                    fn ($query) => $query->orderByRaw('COALESCE(assigned_at, created_at)'),
+                    fn ($query) => $query->orderBy('scheduled_date'))
+                ->orderBy('id')
+                ->paginate($perPage, pageName: $pageName, page: $page, total: $count)
+                ->withQueryString()
+                ->appends('grupo', $status->value)
+                ->fragment('ordenes-'.$status->value);
+        }
+
+        $requestedGroup = $request->query('grupo');
+        $openStatus = is_string($requestedGroup) && isset($groups[$requestedGroup]) ? $requestedGroup : array_key_first($groups);
+        $totalOrders = $totals->sum();
+
+        return view('contractor.orders', compact('groups', 'openStatus', 'totalOrders'));
     }
 
     /**

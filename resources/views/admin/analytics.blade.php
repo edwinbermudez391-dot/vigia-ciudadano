@@ -169,7 +169,12 @@
                     <tbody class="divide-y divide-[#d5e8e0]">
                         @foreach($contractorPerformance as $contractor)
                             <tr class="hover:bg-[#f8fdfa]">
-                                <td data-label="Contratista" class="py-3 font-medium text-[#062e24]">{{ $contractor['name'] }}</td>
+                                <td data-label="Contratista" class="py-3 font-medium text-[#062e24]">
+                                    {{ $contractor['name'] }}
+                                    @if ($contractor['archived'])
+                                        <span class="report-meta block">Cuenta archivada</span>
+                                    @endif
+                                </td>
                                 <td data-label="Asignadas" class="py-3 tabular-nums">{{ $contractor['assigned'] }}</td>
                                 <td data-label="Completadas" class="py-3 tabular-nums">{{ $contractor['completed'] }}</td>
                                 <td data-label="A tiempo" class="py-3 tabular-nums">{{ $contractor['on_time'] }}</td>

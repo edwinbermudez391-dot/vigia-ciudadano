@@ -15,8 +15,8 @@
             <div class="empty-state"><x-icon name="users" /><h2>Aún no hay contratistas</h2><p>Selecciona «Registrar contratista» para habilitar la primera cuadrilla.</p></div>
         @else
             <div class="table-scroll"><table class="reports-table contractors-table" role="table">
-                <caption class="sr-only">Contratistas, estado, dependencia, contacto y órdenes activas</caption>
-                <thead><tr><th scope="col">Contratista y estado</th><th scope="col">Dependencia</th><th scope="col">Contacto</th><th scope="col">Órdenes activas</th></tr></thead>
+                <caption class="sr-only">Contratistas, estado, dependencia, contacto, órdenes activas y acciones</caption>
+                <thead><tr><th scope="col">Contratista y estado</th><th scope="col">Dependencia</th><th scope="col">Contacto</th><th scope="col">Órdenes activas</th><th scope="col">Acciones</th></tr></thead>
                 <tbody>
                     @foreach ($contractors as $c)
                         <tr data-search-item>
@@ -24,6 +24,29 @@
                             <td data-label="Dependencia">{{ $c->department?->name ?? 'Sin dependencia' }}</td>
                             <td data-label="Contacto"><span class="block break-words">{{ $c->email }}</span><span class="report-meta block mt-2">{{ $c->phone ?: 'Sin teléfono' }}</span></td>
                             <td data-label="Órdenes activas"><strong class="text-2xl tabular-nums">{{ $c->active_orders_count }}</strong></td>
+                            <td data-label="Acciones">
+                                @php
+                                    $hasHistory = $c->work_orders_exists || $c->reports_exists || $c->quality_inspections_exists;
+                                    $confirmation = "¿Eliminar la cuenta de {$c->name}? ";
+                                    $confirmation .= $hasHistory
+                                        ? 'Se revocará el acceso y Alcaldía conservará el historial.'
+                                        : 'Esta acción es definitiva.';
+                                    if ($c->active_orders_count > 0) {
+                                        $confirmation .= " Tiene {$c->active_orders_count} órdenes activas que requerirán atención de Alcaldía.";
+                                    }
+                                @endphp
+                                <div class="row-actions items-center">
+                                    <x-button :href="route('admin.contractors.edit', $c)" variant="secondary" aria-label="Editar cuenta de {{ $c->name }}">Editar</x-button>
+                                    <form method="POST" action="{{ route('admin.contractors.destroy', $c) }}" data-confirm="{{ $confirmation }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" aria-label="Eliminar cuenta de {{ $c->name }}"
+                                                class="inline-flex min-h-11 items-center rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 font-semibold text-rose-800 hover:bg-rose-100 focus-visible:ring-2 focus-visible:ring-rose-700">
+                                            Eliminar
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -36,7 +59,7 @@
     <div class="absolute inset-0 bg-slate-950/45" data-register_close></div>
     <form method="POST" action="{{ route('admin.contractors.store') }}" data-confirm="¿Confirmas el registro? Este contratista quedará habilitado para recibir órdenes de trabajo." class="relative w-full max-w-2xl rounded-2xl border border-border bg-white p-6 sm:p-8 shadow-xl">
         @csrf
-        <div class="dialog-heading"><div><h2 id="register-title">Registrar contratista</h2><p id="register-description" class="field-help">Completa los datos de la empresa o cuadrilla. Los campos con * son obligatorios.</p></div><button type="button" class="dialog-close" data-register_close aria-label="Cerrar registro">✕</button></div>
+        <div class="dialog-heading"><div><h2 id="register-title">Registrar contratista</h2><p id="register-description" class="field-help">Completa los datos de la empresa o cuadrilla. Los campos con * son obligatorios.</p></div><button type="button" class="btn-secondary dialog-close" data-register_close aria-label="Cerrar registro">✕</button></div>
         <div class="space-y-6 mt-6">
             <x-form-field name="name" id="rc-name" label="Nombre de la empresa o cuadrilla" :required="true" maxlength="120" autocomplete="organization" placeholder="Constructora ejemplo S.A.S." />
             <div class="field-grid">

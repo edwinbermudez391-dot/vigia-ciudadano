@@ -35,8 +35,8 @@ try {
     await page.getByText('Todavía no hay reportes guardados', { exact: false }).waitFor();
     await page.addInitScript(() => Object.defineProperty(window, 'localStorage', { get() { throw new Error('Storage blocked'); } }));
     await page.reload();
-    await page.getByText('No pudimos leer la lista', { exact: false }).waitFor();
+    await page.getByText('No pudimos leer la copia', { exact: false }).waitFor();
     await page.goto(`${base}/__device-receipt-test`);
-    await page.getByText('Este navegador no permite guardar la lista.', { exact: false }).waitFor();
+    await page.getByText('No se pudo guardar una copia en el navegador.', { exact: false }).waitFor();
     console.log('PASS: device list, automatic saving, persistence, deduplication, isolation and blocked storage.');
 } finally { await browser.close(); }

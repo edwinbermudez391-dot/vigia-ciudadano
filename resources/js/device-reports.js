@@ -28,7 +28,7 @@ if (receipt && validCode(receipt.dataset.code)) {
         localStorage.setItem(key, JSON.stringify(reports));
         status.textContent = 'Guardado en «Mis reportes en este dispositivo».';
     } catch {
-        status.textContent = 'Este navegador no permite guardar la lista. Guarda el enlace desde «Consultar mi reporte» para volver después.';
+        status.textContent = 'No se pudo guardar una copia en el navegador. Conserva el número de reporte para volver a consultarlo.';
     }
 }
 
@@ -36,13 +36,13 @@ const container = document.querySelector('[data-device-reports]');
 if (container) {
     const status = container.querySelector('[data-device-list-status]');
     const list = container.querySelector('[data-device-list]');
+    const items = [...list.children];
+    const savedCodes = new Set(items.map(item => item.dataset.code));
     try {
-        const reports = readReports().sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
-        status.textContent = reports.length ? '' : 'Todavía no hay reportes guardados en este navegador. Los próximos que envíes aparecerán aquí.';
-        status.hidden = reports.length > 0;
-        list.hidden = reports.length === 0;
-        reports.forEach(report => {
+        const localReports = readReports().filter(report => !savedCodes.has(report.code));
+        localReports.forEach(report => {
             const item = document.createElement('li');
+            item.dataset.createdAt = report.createdAt;
             const number = document.createElement('strong');
             number.textContent = report.code;
             const date = document.createElement('p');
@@ -54,9 +54,17 @@ if (container) {
             link.textContent = 'Consultar reporte';
             link.setAttribute('aria-label', `Consultar reporte ${report.code}`);
             item.append(number, date, link);
-            list.append(item);
+            items.push(item);
         });
+        if (localReports.length) {
+            items.sort((a, b) => Date.parse(b.dataset.createdAt) - Date.parse(a.dataset.createdAt));
+            list.replaceChildren(...items);
+            list.hidden = false;
+            status.hidden = true;
+        }
     } catch {
-        status.textContent = 'No pudimos leer la lista de este navegador. Puedes consultar tu reporte desde el inicio usando su número.';
+        if (!items.length) {
+            status.textContent = 'No pudimos leer la copia de este navegador. Puedes consultar tu reporte usando su número.';
+        }
     }
 }

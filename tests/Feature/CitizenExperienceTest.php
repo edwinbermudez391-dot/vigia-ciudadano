@@ -59,7 +59,7 @@ final class CitizenExperienceTest extends TestCase
             ->assertSee('data-report-step="0"', false)->assertSee('data-report-step="1"', false)->assertSee('data-report-step="2"', false)
             ->assertSee('Usar mi ubicación')->assertSee('Mapa para señalar el problema')
             ->assertDontSee('id="address-search"', false)
-            ->assertDontSee('data-use-map-center', false)
+            ->assertSee('data-use-map-center', false)->assertSee('data-open-map', false)
             ->assertSee('Agregar foto')->assertSee('data-photo-camera', false)
             ->assertSee('name="latitude"', false)->assertSee('name="longitude"', false)
             ->assertSee('maxlength="1000"', false)
@@ -70,7 +70,7 @@ final class CitizenExperienceTest extends TestCase
     {
         Storage::fake('public');
         $category = $this->category();
-        $response = $this->post('/reportes', [
+        $reportData = [
             'category_id' => $category->id, 'title' => 'Hueco en el barrio',
             'description' => 'Hay un hueco grande frente al parque del barrio.',
             'latitude' => '3.0095', 'longitude' => '-76.4849',
@@ -78,7 +78,8 @@ final class CitizenExperienceTest extends TestCase
             'damage_photo' => UploadedFile::fake()->createWithContent('problema.png', (string) base64_decode(
                 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
             )),
-        ]);
+        ];
+        $response = $this->post('/reportes', $reportData);
         $response->assertSessionHasNoErrors();
         $report = Report::sole();
         $response->assertRedirect(route('reports.success', $report->ticket_code));
@@ -88,11 +89,30 @@ final class CitizenExperienceTest extends TestCase
         Storage::disk('public')->assertExists($report->damage_photo_url);
         $this->get(route('reports.success', $report->ticket_code))->assertOk()
             ->assertSee('¡Tu reporte fue recibido!')->assertSee($report->ticket_code)
+            ->assertSee('id="ticket-code"', false)
             ->assertDontSee('Copiar número')->assertDontSee('Imprimir comprobante')
             ->assertDontSee('Compartir comprobante')
             ->assertSee('data-device-receipt', false);
         $this->get(route('reports.success', $report->ticket_code))->assertOk()
             ->assertDontSee('data-device-receipt', false);
+
+        $cookie = $response->getCookie('vigia_device_reports');
+        $this->assertNotNull($cookie);
+        $this->assertGreaterThan(now()->addDays(30)->timestamp, $cookie->getExpiresTime());
+        $this->assertTrue($cookie->isHttpOnly());
+        $this->assertSame('/reportes', $cookie->getPath());
+
+        $this->flushSession();
+        $this->get(route('reports.device'))->assertOk()->assertDontSee($report->ticket_code);
+
+        $this->withCookie($cookie->getName(), $cookie->getValue());
+        $list = $this->get(route('reports.device'))->assertOk()->assertSee($report->ticket_code);
+        $this->assertStringContainsString('no-store', $list->headers->get('Cache-Control'));
+
+        $this->post('/reportes', $reportData)->assertSessionHasNoErrors()->assertCookie($cookie->getName(), $cookie->getValue());
+        $second = Report::latest('id')->firstOrFail();
+        $this->assertNotSame($report->ticket_code, $second->ticket_code);
+        $this->get(route('reports.device'))->assertOk()->assertSeeInOrder([$second->ticket_code, $report->ticket_code]);
     }
 
     public function test_device_reports_page_is_public_and_does_not_list_other_peoples_reports(): void
@@ -104,6 +124,9 @@ final class CitizenExperienceTest extends TestCase
             ->assertDontSee($report->ticket_code);
         $this->get(route('reports.success', $report->ticket_code))->assertOk()
             ->assertDontSee('data-device-receipt', false);
+        $this->get(route('reports.device', ['radicado' => strtolower($report->ticket_code)]))->assertOk()
+            ->assertSee(route('reports.show', $report->ticket_code), false)
+            ->assertSee('Abrir mi reporte');
         $this->get('/')->assertOk()->assertSee(route('reports.device'), false);
     }
 

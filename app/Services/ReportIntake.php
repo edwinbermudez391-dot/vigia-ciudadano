@@ -38,13 +38,13 @@ final class ReportIntake
      *
      * @throws UniqueConstraintViolationException tras agotar los reintentos
      */
-    public function create(array $data, ?UploadedFile $photo, ?User $author): Report
+    public function create(array $data, ?UploadedFile $photo, ?User $author, ?string $deviceTokenHash = null): Report
     {
         // Retry acotado: bajo concurrencia extrema dos tickets pueden chocar
         // contra el UNIQUE de ticket_code; reintenta con el siguiente correlativo.
         for ($attempt = 1; ; $attempt++) {
             try {
-                return $this->persist($data, $photo, $author);
+                return $this->persist($data, $photo, $author, $deviceTokenHash);
             } catch (UniqueConstraintViolationException $e) {
                 if ($attempt >= 3) {
                     throw $e;
@@ -57,9 +57,9 @@ final class ReportIntake
      * Foto + inserción en una transacción con compensación del archivo:
      * el filesystem no participa del rollback.
      */
-    private function persist(array $data, ?UploadedFile $photo, ?User $author): Report
+    private function persist(array $data, ?UploadedFile $photo, ?User $author, ?string $deviceTokenHash): Report
     {
-        return DB::transaction(function () use ($data, $photo, $author): Report {
+        return DB::transaction(function () use ($data, $photo, $author, $deviceTokenHash): Report {
             $ticketCode = $this->tickets->next();
 
             // Nombre en disco derivado del ticket (único garantizado),
@@ -69,6 +69,7 @@ final class ReportIntake
             try {
                 return Report::create([
                     'ticket_code' => $ticketCode,
+                    'device_token_hash' => $deviceTokenHash,
                     'user_id' => $author?->id,
                     'citizen_name' => $data['citizen_name'] ?? null,
                     'citizen_phone' => $data['citizen_phone'] ?? null,

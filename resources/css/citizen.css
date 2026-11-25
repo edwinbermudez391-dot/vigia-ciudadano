@@ -18,7 +18,7 @@
 .citizen-ui :is(.citizen-content, .hero-actions) .ui-icon { width: 1.625rem; height: 1.625rem; }
 .citizen-tools { display: flex; justify-content: flex-end; margin-bottom: .75rem; }
 .citizen-ui .citizen-tools button { font-size: var(--citizen-small); min-height: 3rem; }
-.citizen-tools button[aria-pressed=true] { background: #eff6ff; border-color: #1e40af; }
+.citizen-tools button[aria-pressed=true] { background: var(--color-primary); color: white; border-color: var(--color-primary); }
 .citizen-ui .public-hero .hero-layout { padding-block: 1.75rem; }
 .citizen-ui .hero-layout { grid-template-columns: minmax(0, 1fr); }
 .citizen-ui .hero-layout > * { min-width: 0; }
@@ -61,8 +61,11 @@
 .citizen-ui .citizen-address-results button { width: 100%; text-align: left; justify-content: flex-start; white-space: normal; }
 .citizen-map-section > * + * { margin-top: .75rem; }
 .citizen-ui #map.citizen-location-map { width: 100%; height: 18rem; border: 1px solid #94a3b8; border-radius: .75rem; z-index: 1; }
+.citizen-map-target { position: relative; }
+.citizen-map-crosshair { position: absolute; inset: 50% auto auto 50%; translate: -50% -50%; z-index: 2; font-size: 1.5rem; line-height: 1; color: #0f172a; text-shadow: 0 0 3px white, 0 0 3px white; pointer-events: none; }
 .citizen-fields { display: grid; gap: 1rem; }
-.citizen-ui .citizen-card label.citizen-photo-picker { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: .75rem; min-height: 3.5rem; max-width: 100%; padding: .75rem 1rem; border: 2px solid #1e40af; color: #1e3a8a; border-radius: .625rem; background: #eff6ff; cursor: pointer; }
+.citizen-ui .citizen-card label.citizen-photo-picker { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: .75rem; min-height: 3.5rem; max-width: 100%; padding: .75rem 1rem; border: 1px solid var(--color-action-border); color: var(--color-secondary); border-radius: .625rem; background: var(--color-action-soft); cursor: pointer; }
+.citizen-ui .citizen-card label.citizen-photo-picker:hover { background: var(--color-action-soft-hover); }
 .citizen-ui .citizen-photo-preview { display: block; margin-top: 1rem; width: 100%; max-height: 22rem; object-fit: contain; background: #f1f5f9; border-radius: .75rem; }
 .citizen-photo-actions { display: grid; grid-template-columns: minmax(0, 1fr); gap: .75rem; align-items: stretch; }
 .citizen-ui .citizen-photo-actions > :is(button, label.citizen-photo-picker) { width: 100%; min-height: 3.5rem; margin: 0; box-sizing: border-box; justify-content: center; font-weight: 600; }

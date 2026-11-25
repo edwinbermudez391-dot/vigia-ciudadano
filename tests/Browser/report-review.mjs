@@ -76,7 +76,8 @@ try {
     await page.evaluate(() => {
         let attempts = 0;
         Object.defineProperty(navigator, 'geolocation', { configurable: true, value: {
-            getCurrentPosition: (ok, fail) => {
+            getCurrentPosition: (ok, fail, options) => {
+                if (!options.enableHighAccuracy || options.maximumAge !== 0) throw new Error('Se requiere una lectura nueva de alta precisión');
                 attempts++;
                 if (attempts === 1) fail({ code: 3 });
                 else ok({ coords: { latitude: 3.011, longitude: -76.481, accuracy: 20 } });
@@ -99,9 +100,13 @@ try {
     await page.waitForFunction(() => document.querySelector('[data-photo-input]').files[0]?.name === 'foto-reporte.jpg');
     await next(0);
     await page.evaluate(() => Object.defineProperty(navigator, 'geolocation', { configurable: true, value: {
-        getCurrentPosition: ok => ok({ coords: { latitude: 3.011, longitude: -76.481, accuracy: 20 } }),
+        getCurrentPosition: ok => ok({ coords: { latitude: 3.011, longitude: -76.481, accuracy: 900 } }),
     } }));
     await page.locator('[data-geolocate]').click();
+    await page.getByText('La ubicación es aproximada', { exact: false }).waitFor();
+    assert.equal(await page.locator('#latitude').inputValue(), '');
+    assert.equal(await page.locator('[data-confirm-location]').isVisible(), false);
+    await page.locator('[data-use-map-center]').click();
     await page.getByRole('heading', { name: '¿El problema está aquí?' }).waitFor();
     await page.locator('.leaflet-marker-icon').waitFor();
     assert.equal(await page.locator('[data-map-section]').isVisible(), true);

@@ -24,7 +24,7 @@
                 <p id="assign-label" class="mt-1 font-mono text-xs text-[#5d7d70]">{{ old('report_label') }}</p>
             </div>
             <button type="button" data-assign_close aria-label="Cerrar"
-                    class="dialog-close">
+                    class="btn-secondary dialog-close">
                 ✕
             </button>
         </div>

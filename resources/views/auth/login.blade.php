@@ -33,7 +33,7 @@
 
                 {{-- Título Principal --}}
                 <div class="mb-8">
-                    <h1 class="text-2xl font-bold tracking-tight text-text-primary">Ingresar</h1>
+                    <h1 class="text-2xl font-bold tracking-tight text-primary">Ingresar</h1>
                     <p class="mt-3 text-base text-text-secondary">Usa la cuenta habilitada por tu entidad.</p>
                 </div>
 
@@ -120,15 +120,15 @@
                         </p>
                         <div class="login-demo-actions">
                             <button type="button" data-quick-login="admin@vigia.gov.co"
-                                    class="flex items-center justify-center gap-1.5 rounded-full border border-border bg-background px-2 py-2 text-[11px] font-semibold text-text-primary transition hover:bg-primary/5 hover:border-primary active:scale-[0.98]">
+                                    class="btn-secondary gap-1.5 px-2 py-2 text-[11px] transition active:scale-[0.98]">
                                 <span class="size-1.5 rounded-full bg-secondary"></span> Alcaldía
                             </button>
                             <button type="button" data-quick-login="cuadrilla@infraestructura.com"
-                                    class="flex items-center justify-center gap-1.5 rounded-full border border-border bg-background px-2 py-2 text-[11px] font-semibold text-text-primary transition hover:bg-primary/5 hover:border-primary active:scale-[0.98]">
-                                <span class="size-1.5 rounded-full bg-success"></span> Cuadrilla
+                                    class="btn-secondary gap-1.5 px-2 py-2 text-[11px] transition active:scale-[0.98]">
+                                <span class="size-1.5 rounded-full bg-primary"></span> Cuadrilla
                             </button>
                             <button type="button" data-quick-login="inspector1@calidad.gov.co"
-                                    class="flex items-center justify-center gap-1.5 rounded-full border border-border bg-background px-2 py-2 text-[11px] font-semibold text-text-primary transition hover:bg-primary/5 hover:border-primary active:scale-[0.98]">
+                                    class="btn-secondary gap-1.5 px-2 py-2 text-[11px] transition active:scale-[0.98]">
                                 <span class="size-1.5 rounded-full bg-primary"></span> Inspector
                             </button>
                         </div>
@@ -165,13 +165,9 @@
         </main>
 
         {{-- ==================== COLUMNA DERECHA: IMAGEN HERO ==================== --}}
-        <aside class="login-aside" aria-label="Acerca del espacio de trabajo">
-            <span class="login-seal"><x-icon name="shield" />Gestión municipal</span>
-            <h2>Una ciudad mejor atendida.</h2>
-            <p>Coordina reparaciones y verifica su calidad.</p>
-            <ul><li><x-icon name="report" />Reportes</li><li><x-icon name="work" />Órdenes de trabajo</li><li><x-icon name="check" />Inspecciones</li></ul>
-            <img src="{{ asset('imagenes/WhatsApp Image 2026-10-16 at 11.51.55 AM.jpeg') }}" alt="" class="login-photo">
-        </aside>
+        <div class="login-aside">
+            <img src="{{ asset('imagenes/login-reporte-ciudadano.jpg') }}" alt="" class="login-photo" width="1254" height="1254">
+        </div>
 
     </div>
 </body>

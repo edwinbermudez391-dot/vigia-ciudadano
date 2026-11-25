@@ -69,6 +69,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'role' => UserRole::class,
             'is_active' => 'boolean',
+            'contractor_archived_at' => 'datetime',
             'department_id' => 'integer',
         ];
     }

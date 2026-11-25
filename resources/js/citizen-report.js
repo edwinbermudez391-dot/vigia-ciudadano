@@ -1,5 +1,8 @@
 import { prepareReportPhoto } from './report-photo';
 
+const maxLocationError = 50;
+const geolocationOptions = { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 };
+
 export function initCitizenReport(form) {
     if (!form) return;
     const steps = [...form.querySelectorAll('[data-report-step]')];
@@ -8,10 +11,14 @@ export function initCitizenReport(form) {
     const latInput = form.querySelector('[data-lat-input]');
     const lngInput = form.querySelector('[data-lng-input]');
     const locationStatus = form.querySelector('[data-location-status]');
+    const geoButton = form.querySelector('[data-geolocate]');
+    const mapSection = form.querySelector('[data-map-section]');
+    const useMapCenter = form.querySelector('[data-use-map-center]');
     const photoInput = form.querySelector('[data-photo-input]');
     let currentStep = 0;
     let map = null;
     let marker = null;
+    let locationAccuracy = null;
     let photoUrl = null;
     let photoProblem = '';
     let preparingPhoto = false;
@@ -84,7 +91,7 @@ export function initCitizenReport(form) {
         if (index === 1 && (!latInput.value || !lngInput.value || !validPoint(Number(latInput.value), Number(lngInput.value)))) {
             showStep(1, false);
             locationStatus.hidden = false;
-            locationStatus.textContent = 'Toca «Usar mi ubicación» para obtener la posición de tu dispositivo.';
+            locationStatus.textContent = 'Usa la ubicación de tu dispositivo o elige el lugar en el mapa.';
             form.querySelector('[data-geolocate]').focus();
             return false;
         }
@@ -104,7 +111,7 @@ export function initCitizenReport(form) {
         });
         if (!firstInvalid && index === 1 && (choosingLocation || confirmedVersion !== pointVersion)) {
             showStep(1, false);
-            locationStatus.textContent = choosingLocation ? 'Vuelve a intentar obtener la ubicación del dispositivo.' : 'Comprueba el punto en el mapa y confirma si el problema está ahí.';
+            locationStatus.textContent = choosingLocation ? 'Vuelve a intentar obtener la ubicación o elige el lugar en el mapa.' : 'Comprueba el punto en el mapa y confirma si el problema está ahí.';
             if (choosingLocation) form.querySelector('[data-geolocate]').focus();
             else confirmLocation.focus();
             return false;
@@ -135,7 +142,7 @@ export function initCitizenReport(form) {
     });
     progress.hidden = false;
     stepStatus.hidden = false;
-    form.querySelectorAll('[data-step-actions], [data-step-previous], [data-geolocate]').forEach((element) => { element.hidden = false; });
+    form.querySelectorAll('[data-step-actions], [data-step-previous], [data-geolocate], [data-open-map]').forEach((element) => { element.hidden = false; });
     locationStatus.hidden = true;
     steps[1].querySelector('[data-step-next]').hidden = !latInput.value || !lngInput.value;
     form.querySelectorAll('[data-step-next]').forEach((button) => button.addEventListener('click', () => {
@@ -165,6 +172,7 @@ export function initCitizenReport(form) {
     function setPoint(lat, lng, message, pan = true, label = 'Punto elegido en el mapa') {
         if (!validPoint(lat, lng)) return;
         pointVersion++;
+        if (geoButton.disabled) resetLocationButton();
         choosingLocation = false;
         confirmedVersion = -1;
         locationLabel = label;
@@ -176,7 +184,6 @@ export function initCitizenReport(form) {
         form.querySelector('[data-confirm-title]').textContent = '¿El problema está aquí?';
         form.querySelector('[data-location-label]').textContent = label;
         confirmLocation.textContent = 'Sí, este es el lugar';
-        const mapSection = form.querySelector('[data-map-section]');
         mapSection.hidden = false;
         mapSection.open = true;
         latInput.value = lat.toFixed(6);
@@ -185,6 +192,8 @@ export function initCitizenReport(form) {
         locationStatus.textContent = message;
         locationStatus.classList.remove('citizen-error');
         if (map) {
+            locationAccuracy?.remove();
+            locationAccuracy = null;
             if (!marker) {
                 marker = window.L.marker([lat, lng], { draggable: false, title: 'Lugar del problema', alt: 'Lugar elegido para el reporte' }).addTo(map);
             } else marker.setLatLng([lat, lng]);
@@ -195,7 +204,6 @@ export function initCitizenReport(form) {
     }
     function initMap() {
         if (map) { map.invalidateSize(); return; }
-        const section = form.querySelector('[data-map-section]');
         if (!window.L) {
             locationStatus.hidden = false;
             locationStatus.textContent = 'El mapa no está disponible. La ubicación del dispositivo se conserva; comprueba tu conexión para verlo.';
@@ -203,6 +211,8 @@ export function initCitizenReport(form) {
         }
         map = window.L.map('map', { scrollWheelZoom: false }).setView([3.0095, -76.4849], 15);
         window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
+        map.on('click', ({ latlng }) => selectMapPoint(latlng));
+        useMapCenter.hidden = false;
         if (latInput.value !== '' && lngInput.value !== '' && validPoint(Number(latInput.value), Number(lngInput.value))) {
             const point = [Number(latInput.value), Number(lngInput.value)];
             marker = window.L.marker(point, { draggable: false, title: 'Lugar del problema', alt: 'Lugar elegido para el reporte' }).addTo(map);
@@ -211,62 +221,95 @@ export function initCitizenReport(form) {
         }
         requestAnimationFrame(() => map.invalidateSize());
     }
-    form.querySelector('[data-map-section]').addEventListener('toggle', (event) => {
+    mapSection.addEventListener('toggle', (event) => {
         if (event.currentTarget.open) requestAnimationFrame(initMap);
     });
+    function selectMapPoint(point) {
+        const { lat, lng } = map.wrapLatLng(point);
+        setPoint(lat, lng, 'Punto marcado. Comprueba que corresponda al lugar del problema.', false);
+    }
+    useMapCenter.addEventListener('click', () => selectMapPoint(map.getCenter()));
+    function openMap() {
+        mapSection.hidden = false;
+        mapSection.open = true;
+        initMap();
+        mapSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    form.querySelector('[data-open-map]').addEventListener('click', openMap);
     [latInput, lngInput].forEach((input) => input.addEventListener('input', () => {
         const lat = Number(latInput.value), lng = Number(lngInput.value);
         if (latInput.value !== '' && lngInput.value !== '' && validPoint(lat, lng)) setPoint(lat, lng, 'Coordenadas guardadas. Comprueba que corresponden al problema.', false);
         else { pointVersion++; confirmation.hidden = true; nearbyController?.abort(); form.querySelector('[data-duplicate-banner]').hidden = true; locationStatus.textContent = 'Falta completar una ubicación válida.'; }
     }));
 
-    const geoButton = form.querySelector('[data-geolocate]');
+    function resetLocationButton(label = 'Volver a usar mi ubicación') {
+        geoButton.disabled = false;
+        geoButton.querySelector('span').textContent = label;
+    }
+
     geoButton.addEventListener('click', () => {
         locationStatus.hidden = false;
         if (!window.isSecureContext) {
-            locationStatus.textContent = 'Para usar el GPS, abre la página desde el enlace HTTPS de Cloudflare.';
+            locationStatus.textContent = 'Para usar la ubicación del dispositivo, abre la página con HTTPS o elige el lugar en el mapa.';
             return;
         }
         if (!navigator.geolocation) {
-            locationStatus.textContent = 'Este navegador no permite usar el GPS. Abre el enlace en Chrome o Safari.';
+            locationStatus.textContent = 'Este navegador no ofrece ubicación. Elige el lugar en el mapa.';
             return;
         }
         pointVersion++;
         const requestedAt = pointVersion;
         confirmation.hidden = true;
         choosingLocation = true;
+        scheduleNearby();
         geoButton.disabled = true;
         geoButton.querySelector('span').textContent = 'Buscando tu ubicación…';
         steps[1].querySelector('[data-step-next]').hidden = true;
         locationStatus.textContent = 'Buscando tu ubicación… Si el celular pide permiso, toca «Permitir».';
-        const success = (position) => {
-            geoButton.disabled = false;
-            geoButton.querySelector('span').textContent = 'Volver a usar mi ubicación';
+        let best = null;
+        function finish(error) {
             if (requestedAt !== pointVersion) return;
-            const { latitude, longitude } = position.coords;
-            if (!validPoint(latitude, longitude)) { failure({ code: 2 }, false); return; }
-            setPoint(latitude, longitude, 'Comprueba el punto marcado en el mapa.', true, 'Tu ubicación');
-            initMap();
-            form.querySelector('[data-map-section]').scrollIntoView({ behavior: 'smooth', block: 'start' });
-        };
-        const failure = (error, retry = true) => {
-            if (requestedAt !== pointVersion) { geoButton.disabled = false; return; }
-            if (error.code !== 1 && retry) {
-                locationStatus.textContent = 'El GPS está tardando. Estamos intentando otra forma de obtener tu ubicación…';
-                navigator.geolocation.getCurrentPosition(success, error => failure(error, false), {
-                    enableHighAccuracy: false, timeout: 15000, maximumAge: 60000,
-                });
+            resetLocationButton(best ? undefined : 'Intentar de nuevo');
+            if (best) {
+                const { latitude, longitude, accuracy } = best;
+                openMap();
+                if (accuracy <= maxLocationError) {
+                    setPoint(latitude, longitude, `Precisión estimada: ${Math.ceil(accuracy)} m. Confirma el punto o corrígelo en el mapa.`, true, 'Tu ubicación');
+                } else {
+                    if (map) {
+                        marker?.remove();
+                        marker = null;
+                        locationAccuracy?.remove();
+                        locationAccuracy = window.L.circle([latitude, longitude], { radius: accuracy, interactive: false }).addTo(map);
+                        map.fitBounds(locationAccuracy.getBounds(), { maxZoom: 17 });
+                    }
+                    locationStatus.textContent = map
+                        ? `La ubicación es aproximada (${Math.ceil(accuracy)} m de margen). Marca el lugar exacto en el mapa o vuelve a intentarlo.`
+                        : 'La ubicación es aproximada y el mapa no está disponible. Comprueba tu conexión o vuelve a intentarlo.';
+                }
                 return;
             }
-            geoButton.disabled = false;
-            geoButton.querySelector('span').textContent = 'Intentar de nuevo';
-            locationStatus.textContent = error.code === 1
-                ? 'El permiso de ubicación está bloqueado. En los permisos de este sitio, permite la ubicación y vuelve a tocar «Usar mi ubicación».'
-                : error.code === 3
-                    ? 'El celular no respondió a tiempo. Activa la ubicación del teléfono y toca de nuevo «Usar mi ubicación».'
-                    : 'No hay señal de ubicación disponible. Comprueba que la ubicación del teléfono esté activada y vuelve a intentarlo.';
-        };
-        navigator.geolocation.getCurrentPosition(success, failure, { enableHighAccuracy: true, timeout: 20000, maximumAge: 15000 });
+            locationStatus.textContent = error?.code === 1
+                ? 'El permiso de ubicación está bloqueado. Permítelo en el navegador o elige el lugar en el mapa.'
+                : 'No se obtuvo una ubicación precisa. Activa la ubicación del dispositivo, inténtalo de nuevo o marca el lugar en el mapa.';
+        }
+        function readLocation(retry) {
+            const retryOrFinish = (error) => {
+                if (requestedAt !== pointVersion) return;
+                if (retry && error?.code !== 1) {
+                    locationStatus.textContent = 'Buscando una lectura más precisa…';
+                    readLocation(false);
+                } else finish(error);
+            };
+            navigator.geolocation.getCurrentPosition(({ coords }) => {
+                if (requestedAt !== pointVersion) return;
+                const { latitude, longitude, accuracy } = coords;
+                if (validPoint(latitude, longitude) && Number.isFinite(accuracy) && accuracy > 0 && (!best || accuracy < best.accuracy)) best = coords;
+                if (best?.accuracy <= maxLocationError) finish();
+                else retryOrFinish();
+            }, retryOrFinish, geolocationOptions);
+        }
+        readLocation(true);
     });
 
     const preview = form.querySelector('[data-photo-preview]');
@@ -330,7 +373,7 @@ export function initCitizenReport(form) {
         clearTimeout(nearbyTimer);
         nearbyController?.abort();
         form.querySelector('[data-duplicate-banner]').hidden = true;
-        if (form.dataset.canSubscribe !== 'true') return; // Preserve API permissions; no anonymous auth errors.
+        if (choosingLocation || form.dataset.canSubscribe !== 'true') return;
         nearbyTimer = setTimeout(checkNearby, 600);
     }
     async function checkNearby() {

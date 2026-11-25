@@ -6,4 +6,3 @@
     <x-nav-link :href="route('reports.create')" :active="request()->routeIs('reports.create')" icon="report">Reportar</x-nav-link>
     <x-nav-link :href="route('reports.device')" :active="request()->routeIs('reports.device')" icon="report">Mis reportes</x-nav-link>
 </nav>
-<a href="{{ route('login') }}" class="btn-primary public-login">Ingresar</a>

@@ -23,6 +23,7 @@ class WorkOrder extends Model
         'report_id',
         'contractor_id',
         'scheduled_date',
+        'assigned_at',
         'completion_date',
         'work_description',
         'solution_photo_url',
@@ -40,6 +41,7 @@ class WorkOrder extends Model
             'report_id' => 'integer',
             'contractor_id' => 'integer',
             'scheduled_date' => 'date',
+            'assigned_at' => 'datetime',
             'completion_date' => 'datetime',
             'status' => WorkOrderStatus::class,
         ];

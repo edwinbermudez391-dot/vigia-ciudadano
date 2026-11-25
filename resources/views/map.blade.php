@@ -18,15 +18,11 @@
         .map-popup-title { font-size: 14px; font-weight: 700; color: #062e24; margin: 4px 0; line-height: 1.3; }
         .map-popup-category { font-size: 12px; color: #1f5142; }
         .map-popup-badge { display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 6px; }
-        .map-popup-link { display: block; text-align: center; margin-top: 8px; padding: 6px 12px; background: #087b5f; color: white; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 600; transition: background 0.2s; }
-        .map-popup-link:hover { background: #05664e; }
         .marker-cluster-custom { background-clip: padding-box; border-radius: 50%; }
         .map-stats { position: absolute; top: 12px; left: 55px; z-index: 1000; background: white; padding: 8px 16px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 13px; font-weight: 600; color: #062e24; }
         .map-stats span { color: #087b5f; }
         .map-filter-bar { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; gap: 6px; background: white; padding: 6px; border-radius: 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.18); }
-        .map-filter-btn { padding: 6px 14px; border-radius: 10px; border: 1px solid #d5e8e0; background: white; color: #062e24; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
-        .map-filter-btn:hover { background: #f0faf5; border-color: #087b5f; }
-        .map-filter-btn.active { background: #087b5f; color: white; border-color: #087b5f; }
+        .map-filter-btn { padding: 6px 14px; transition: background 0.2s; }
         .leaflet-popup-content-wrapper { border-radius: 12px !important; padding: 0 !important; overflow: hidden; }
         .leaflet-popup-content { margin: 0 !important; width: 224px !important; }
         .leaflet-popup-tip { box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
@@ -47,11 +43,11 @@
 
     {{-- Barra de filtros por estado --}}
     <div class="map-filter-bar" id="map-filters" role="group" aria-label="Filtrar reportes del mapa por estado">
-        <button type="button" class="map-filter-btn active" data-filter="all" aria-pressed="true">Todos</button>
-        <button type="button" class="map-filter-btn" data-filter="reported" aria-pressed="false" style="--dot:#eab308">🟡 Reportados</button>
-        <button type="button" class="map-filter-btn" data-filter="in_progress" aria-pressed="false" style="--dot:#3b82f6">🔵 En progreso</button>
-        <button type="button" class="map-filter-btn" data-filter="under_inspection" aria-pressed="false" style="--dot:#8b5cf6">🟣 Inspección</button>
-        <button type="button" class="map-filter-btn" data-filter="rework" aria-pressed="false" style="--dot:#ef4444">🔴 Retrabajo</button>
+        <button type="button" class="map-filter-btn btn-secondary" data-filter="all" aria-pressed="true">Todos</button>
+        <button type="button" class="map-filter-btn btn-secondary" data-filter="reported" aria-pressed="false">🟡 Reportados</button>
+        <button type="button" class="map-filter-btn btn-secondary" data-filter="in_progress" aria-pressed="false">🔵 En progreso</button>
+        <button type="button" class="map-filter-btn btn-secondary" data-filter="under_inspection" aria-pressed="false">🟣 Inspección</button>
+        <button type="button" class="map-filter-btn btn-secondary" data-filter="rework" aria-pressed="false">🔴 Retrabajo</button>
     </div>
 </div>
 @endsection
@@ -93,7 +89,7 @@
             if (count >= 10) { size = 'medium'; dim = 50; }
             if (count >= 50) { size = 'large'; dim = 60; }
             return L.divIcon({
-                html: '<div style="width:' + dim + 'px;height:' + dim + 'px;border-radius:50%;background:#087b5f;color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);">' + count + '</div>',
+                html: '<div style="width:' + dim + 'px;height:' + dim + 'px;border-radius:50%;background:var(--color-primary);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);">' + count + '</div>',
                 className: 'marker-cluster-custom',
                 iconSize: L.point(dim, dim),
             });
@@ -120,7 +116,7 @@
     function buildPopup(report) {
         const photoHtml = report.photo_url
             ? '<img src="' + escapeAttr(report.photo_url) + '" alt="Foto del reporte" class="map-popup-photo" loading="lazy">'
-            : '<div style="width:200px;height:80px;background:#f0faf5;display:flex;align-items:center;justify-content:center;border-radius:8px 8px 0 0;"><span style="font-size:28px;">📷</span></div>';
+            : '<div style="width:200px;height:80px;background:var(--color-action-soft);display:flex;align-items:center;justify-content:center;border-radius:8px 8px 0 0;"><span style="font-size:28px;">📷</span></div>';
 
         const statusBgColors = {
             'reported': '#fef9c3',
@@ -149,7 +145,7 @@
             + '<span class="map-popup-badge" style="background:' + bgColor + ';color:' + textColor + ';">'
             + escapeHtml(report.status_label)
             + '</span>'
-            + '<a href="' + escapeAttr(report.detail_url) + '" class="map-popup-link">Ver detalle completo →</a>'
+            + '<a href="' + escapeAttr(report.detail_url) + '" class="map-popup-link btn-primary">Ver detalle completo →</a>'
             + '</div>'
             + '</div>';
     }
@@ -220,7 +216,6 @@
 
         // Actualizar botones activos
         filtersEl.querySelectorAll('.map-filter-btn').forEach(function (b) {
-            b.classList.toggle('active', b.dataset.filter === filter);
             b.setAttribute('aria-pressed', String(b.dataset.filter === filter));
         });
 
