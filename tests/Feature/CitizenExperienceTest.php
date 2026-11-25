@@ -17,6 +17,7 @@ use App\Models\WorkOrder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 final class CitizenExperienceTest extends TestCase
@@ -39,6 +40,21 @@ final class CitizenExperienceTest extends TestCase
             'address_reference' => 'Frente al parque', 'status' => ReportStatus::Reported,
             'citizen_name' => 'NOMBRE_PRIVADO', 'citizen_email' => 'correo-privado@example.test', 'citizen_phone' => 'TELEFONO_PRIVADO',
         ]);
+    }
+
+    private function reportSubmission(int $categoryId): array
+    {
+        return [
+            'category_id' => $categoryId,
+            'title' => 'Hueco en el barrio',
+            'description' => 'Hay un hueco grande frente al parque del barrio.',
+            'latitude' => '3.0095',
+            'longitude' => '-76.4849',
+            'address_reference' => 'Frente al parque',
+            'damage_photo' => UploadedFile::fake()->createWithContent('problema.png', (string) base64_decode(
+                'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
+            )),
+        ];
     }
 
     public function test_home_prioritizes_reporting_and_inline_lookup_without_modals(): void
@@ -70,16 +86,7 @@ final class CitizenExperienceTest extends TestCase
     {
         Storage::fake('public');
         $category = $this->category();
-        $reportData = [
-            'category_id' => $category->id, 'title' => 'Hueco en el barrio',
-            'description' => 'Hay un hueco grande frente al parque del barrio.',
-            'latitude' => '3.0095', 'longitude' => '-76.4849',
-            'address_reference' => 'Frente al parque',
-            'damage_photo' => UploadedFile::fake()->createWithContent('problema.png', (string) base64_decode(
-                'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
-            )),
-        ];
-        $response = $this->post('/reportes', $reportData);
+        $response = $this->post('/reportes', $this->reportSubmission($category->id));
         $response->assertSessionHasNoErrors();
         $report = Report::sole();
         $response->assertRedirect(route('reports.success', $report->ticket_code));
@@ -109,10 +116,62 @@ final class CitizenExperienceTest extends TestCase
         $list = $this->get(route('reports.device'))->assertOk()->assertSee($report->ticket_code);
         $this->assertStringContainsString('no-store', $list->headers->get('Cache-Control'));
 
-        $this->post('/reportes', $reportData)->assertSessionHasNoErrors()->assertCookie($cookie->getName(), $cookie->getValue());
+        $secondSubmission = $this->reportSubmission($category->id);
+        $secondSubmission['longitude'] = '-76.4853';
+        $this->post('/reportes', $secondSubmission)->assertSessionHasNoErrors()->assertCookie($cookie->getName(), $cookie->getValue());
         $second = Report::latest('id')->firstOrFail();
         $this->assertNotSame($report->ticket_code, $second->ticket_code);
         $this->get(route('reports.device'))->assertOk()->assertSeeInOrder([$second->ticket_code, $report->ticket_code]);
+    }
+
+    public function test_guest_cannot_duplicate_an_active_report_near_the_same_point(): void
+    {
+        Storage::fake('public');
+        $original = $this->report();
+        $submission = $this->reportSubmission($original->category_id);
+        $submission['longitude'] = '-76.4848';
+
+        $this->post('/reportes', $submission)
+            ->assertRedirect(route('reports.create'))
+            ->assertSessionHas('duplicate_report_ticket', $original->ticket_code)
+            ->assertSessionHasInput('longitude', '-76.4848');
+
+        $this->get(route('reports.create'))->assertOk()
+            ->assertSee('Este problema ya fue reportado')
+            ->assertSee('Consultar el reporte existente')
+            ->assertSee(route('reports.show', $original->ticket_code), false)
+            ->assertDontSee('correo-privado@example.test');
+
+        $this->assertDatabaseCount('reports', 1);
+        $this->assertNull($original->fresh()->device_token_hash);
+        $this->assertSame([], Storage::disk('public')->allFiles());
+    }
+
+    public function test_guest_can_report_again_at_the_same_place_after_the_case_is_closed(): void
+    {
+        Storage::fake('public');
+        $original = $this->report();
+        $original->update(['status' => ReportStatus::Closed]);
+
+        $response = $this->post('/reportes', $this->reportSubmission($original->category_id));
+
+        $this->assertDatabaseCount('reports', 2);
+        $newReport = Report::where('status', ReportStatus::Reported->value)->sole();
+        $response->assertRedirect(route('reports.success', $newReport->ticket_code));
+    }
+
+    public function test_citizen_api_rejects_a_duplicate_with_the_original_ticket(): void
+    {
+        Storage::fake('public');
+        $original = $this->report();
+        Sanctum::actingAs(User::factory()->create(['role' => UserRole::Citizen]));
+
+        $this->post('/api/v1/reports', $this->reportSubmission($original->category_id), ['Accept' => 'application/json'])
+            ->assertConflict()
+            ->assertJsonPath('message', 'Este problema ya fue reportado.')
+            ->assertJsonPath('ticket_code', $original->ticket_code);
+
+        $this->assertDatabaseCount('reports', 1);
     }
 
     public function test_device_reports_page_is_public_and_does_not_list_other_peoples_reports(): void

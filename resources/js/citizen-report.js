@@ -383,7 +383,7 @@ export function initCitizenReport(form) {
         nearbyController = new AbortController();
         const controller = nearbyController;
         const url = new URL(form.dataset.nearbyUrl);
-        url.search = new URLSearchParams({ category_id: category.value, latitude: lat, longitude: lng, radius_meters: '20' });
+        url.search = new URLSearchParams({ category_id: category.value, latitude: lat, longitude: lng, radius_meters: form.dataset.nearbyRadius });
         try {
             const response = await fetch(url, { signal: controller.signal, headers: { Accept: 'application/json' }, credentials: 'same-origin' });
             if (!response.ok) {

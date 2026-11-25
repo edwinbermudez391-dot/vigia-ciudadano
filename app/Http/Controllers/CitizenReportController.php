@@ -101,6 +101,12 @@ final class CitizenReportController extends Controller
         // Retry del correlativo, transacción y compensación de la foto viven
         // en ReportIntake (compartidos con el portal web).
         $report = $this->intake->create($request->validated(), $photo, $request->user());
+        if (! $report->wasRecentlyCreated) {
+            return response()->json([
+                'message' => 'Este problema ya fue reportado.',
+                'ticket_code' => $report->ticket_code,
+            ], 409);
+        }
 
         // Hidrata category para responder 201 con el detalle completo.
         $report->load('category');

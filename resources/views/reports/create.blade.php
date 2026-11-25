@@ -10,6 +10,16 @@
     <header class="citizen-heading">
         <h1>Vamos a reportar un problema</h1>
     </header>
+    @if ($duplicateTicket = session('duplicate_report_ticket'))
+        <section class="citizen-notice" aria-labelledby="duplicate-report-title">
+            <h2 id="duplicate-report-title">Este problema ya fue reportado</h2>
+            <p>Ya hay un reporte activo de este tipo en el lugar indicado. Puedes seguir su avance con el radicado <strong>{{ $duplicateTicket }}</strong>.</p>
+            <div class="citizen-actions">
+                <a class="btn-primary" href="{{ route('reports.show', ['ticket_code' => $duplicateTicket]) }}">Consultar el reporte existente</a>
+            </div>
+            <p>Si el tipo o el lugar no corresponden, corrígelos en el formulario y vuelve a agregar la foto.</p>
+        </section>
+    @endif
     <noscript><p class="citizen-notice">Puedes completar el formulario en esta página. Activa JavaScript para elegir el lugar del problema.</p></noscript>
     @if ($errors->any())
         <div class="citizen-notice citizen-error-summary" role="alert" tabindex="-1" data-citizen-errors>
@@ -37,7 +47,8 @@
     <form method="POST" action="{{ route('reports.store') }}" enctype="multipart/form-data"
           id="report-form" class="citizen-report-form" data-citizen-report
           data-nearby-url="{{ url('/api/v1/reports/nearby') }}" data-subscribe-url="{{ url('/api/v1/reports') }}"
-          data-detail-url="{{ url('/reportes') }}" data-can-subscribe="{{ auth()->check() ? 'true' : 'false' }}">
+          data-detail-url="{{ url('/reportes') }}" data-can-subscribe="{{ auth()->check() ? 'true' : 'false' }}"
+          data-nearby-radius="{{ \App\Services\ReportIntake::DUPLICATE_RADIUS_METERS }}">
         @csrf
         <section class="citizen-card citizen-step" data-report-step="0" aria-labelledby="step-1-title">
             <h2 id="step-1-title" tabindex="-1">1. ¿Qué pasó?</h2>
@@ -159,7 +170,7 @@
                 <p>Hay <strong data-duplicate-count></strong> reporte(s) similares cerca.</p>
                 <button type="button" class="btn-secondary" data-check-duplicates>Ver reportes cercanos</button>
                 <ul class="citizen-address-results" data-duplicates-list hidden></ul>
-                <p class="citizen-help">Puedes consultar uno existente o enviar este reporte si es un problema diferente.</p>
+                <p class="citizen-help">Consulta el reporte existente. Si el tipo o el lugar que elegiste no corresponden al problema, corrígelos antes de enviar.</p>
             </div>
             <p class="citizen-help">Recibirás un número para consultar tu reporte.</p>
             <p class="citizen-error" role="alert" data-submit-error hidden></p>

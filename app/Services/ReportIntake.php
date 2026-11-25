@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\ReportStatus;
+use App\Models\Category;
 use App\Models\Report;
 use App\Models\User;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -27,6 +28,9 @@ use Throwable;
 final class ReportIntake
 {
     private const PHOTO_FOLDER = 'reports/damages';
+    private const EARTH_RADIUS_METERS = 6371000;
+
+    public const DUPLICATE_RADIUS_METERS = 20;
 
     public function __construct(
         private readonly TicketCodeGenerator $tickets,
@@ -60,6 +64,15 @@ final class ReportIntake
     private function persist(array $data, ?UploadedFile $photo, ?User $author, ?string $deviceTokenHash): Report
     {
         return DB::transaction(function () use ($data, $photo, $author, $deviceTokenHash): Report {
+            $categoryId = (int) $data['category_id'];
+            // Serialize submissions in this category before checking and writing.
+            Category::query()->lockForUpdate()->findOrFail($categoryId, ['id']);
+
+            $duplicate = $this->findDuplicate($categoryId, (float) $data['latitude'], (float) $data['longitude']);
+            if ($duplicate !== null) {
+                return $duplicate;
+            }
+
             $ticketCode = $this->tickets->next();
 
             // Nombre en disco derivado del ticket (único garantizado),
@@ -74,7 +87,7 @@ final class ReportIntake
                     'citizen_name' => $data['citizen_name'] ?? null,
                     'citizen_phone' => $data['citizen_phone'] ?? null,
                     'citizen_email' => $data['citizen_email'] ?? null,
-                    'category_id' => (int) $data['category_id'],
+                    'category_id' => $categoryId,
                     'title' => (string) $data['title'],
                     'description' => (string) $data['description'],
                     'damage_photo_url' => $photoPath,
@@ -88,6 +101,30 @@ final class ReportIntake
 
                 throw $e;
             }
-        });
+        }, 3);
+    }
+
+    private function findDuplicate(int $categoryId, float $latitude, float $longitude): ?Report
+    {
+        $angularRadius = self::DUPLICATE_RADIUS_METERS / self::EARTH_RADIUS_METERS;
+        $latitudeMargin = rad2deg($angularRadius);
+        $maxHaversine = sin($angularRadius / 2) ** 2;
+        $latitudeRadians = deg2rad($latitude);
+
+        return Report::query()
+            ->where('category_id', $categoryId)
+            ->where('status', '!=', ReportStatus::Closed->value)
+            ->whereBetween('latitude', [$latitude - $latitudeMargin, $latitude + $latitudeMargin])
+            ->orderBy('id')
+            ->cursor()
+            ->first(static function (Report $report) use ($latitudeRadians, $longitude, $maxHaversine): bool {
+                $reportLatitude = deg2rad($report->latitude);
+                $latitudeHalfDelta = ($reportLatitude - $latitudeRadians) / 2;
+                $longitudeHalfDelta = deg2rad($report->longitude - $longitude) / 2;
+                $haversine = sin($latitudeHalfDelta) ** 2
+                    + cos($latitudeRadians) * cos($reportLatitude) * sin($longitudeHalfDelta) ** 2;
+
+                return $haversine <= $maxHaversine;
+            });
     }
 }

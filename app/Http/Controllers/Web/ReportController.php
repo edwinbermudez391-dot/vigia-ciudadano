@@ -70,6 +70,12 @@ final class ReportController extends Controller
         ])), 0, 255);
         $token = $this->deviceToken($request) ?? bin2hex(random_bytes(32));
         $report = $this->intake->create($data, $photo, $request->user(), hash('sha256', $token));
+        if (! $report->wasRecentlyCreated) {
+            return redirect()->route('reports.create')
+                ->withInput()
+                ->with('duplicate_report_ticket', $report->ticket_code);
+        }
+
         $this->rememberDevice($request, $token);
 
         // Redirige a la vista de éxito con el ticket en sesión flash.
